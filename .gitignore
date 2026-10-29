@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+models/*.onnx
+.claude/skills/highlight-film/repo-path.txt
+# never commit footage, music or renders
+*.mp4
+*.mov
+*.MOV
+*.mp3
+*.wav
+*.m4a
+events/
+*.part
+.DS_Store
+Thumbs.db

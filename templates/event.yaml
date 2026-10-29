@@ -1,0 +1,50 @@
+# <Event name> - highlight film. Filled in from the setup interview; edit freely.
+name: My trip 2027
+kind: summer holiday               # ski trip | summer holiday | city trip | wedding | birthday | festival | ...
+source: media                      # footage folder (read-only), relative to this file or absolute
+work: work                         # generated files (cache, sheets, renders)
+exclude: []                        # files in the source folder that are not footage (e.g. a reference film)
+
+days: {}                           # "2027-07-01": Travel day   (date -> short description)
+
+film:
+  length: "3-5 min"
+  length_s: 210                    # target seconds (templates/plan.py uses this)
+  format: "16:9"                   # 16:9 | 9:16 (shorts, see ROADMAP) | 1:1
+  feel: cinematic + funny          # funny | cinematic | high-energy | emotional (combine)
+  reference: ""                    # a film whose structure/look to borrow
+  structure: ""                    # agreed section list, filled in when planning
+
+music:
+  tracks:                          # role -> file; roles are names the plan uses
+    main: music/song.mp3
+
+must_have: []                      # - {file: GX010123.mp4, at: 14.0, bars: 3, why: "jump", sound: true, cat: action}
+
+title:
+  full: My trip 2027               # credits title
+  big: TRIP                        # kinetic title: big word (≤ 6 letters fits best), sub line, tag
+  sub: SUMMER
+  tag: "2027"
+
+credits:
+  - "Music:  Artist – Song"
+
+style:
+  grade: warm                      # cool-muted | warm | punchy | natural | <raw ffmpeg filter>
+  grain: true
+  letterbox_scenic: true
+  # font: path/to/font.ttf       # default: bundled Oswald
+  photos: false                    # Ken Burns stills (user default: off)
+  name_cards: false
+
+sound:
+  camera_audio: voices only        # voices only | more | none
+  music_never_stops: true
+
+subtitles: none                    # none | speech | styled-captions  (ROADMAP)
+
+people:
+  recognise: true
+  hints: {}                        # {p03: "Sam?"}
+  same_as: {}                      # {p12: p05}
