@@ -24,3 +24,5 @@ folder, type `/beatcut`.
   `common.need()` inside the step, so the rest of the pipeline runs without them. Helper modules end in `_lib.py`
   (beatcut.py does not list them as steps).
 - An event can hold several EDLs (film + shorts): read and write them through `common.edl_file()` / `out_name()`.
+- `remotion/` is an optional Node sub-project (graphics); pin all `@remotion/*` packages to the same exact version.
+  Check a graphics change by rendering an event with `style.graphics: remotion` and looking at frames.

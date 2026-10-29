@@ -67,6 +67,30 @@ def groups(words, n=3, max_chars=14, gap=0.35):
     return out
 
 
+def caption_layout(W, H):
+    """styled captions: font size and distance from the bottom (9:16: above the like/comment buttons and caption)"""
+    U = min(W, H)
+    return int(U * (0.1 if H > W else 0.085)), int(H * (0.30 if H > W else 0.12))
+
+
+def caption_groups(words):
+    """styled-caption timing: [{"words": [...], "steps": [{"a", "b", "i"}]}]; step i = the highlighted word.
+    Words Whisper squeezed together (< 0.12 s apart) share a step, so nothing flickers."""
+    gs, out = groups(words), []
+    for k, g in enumerate(gs):
+        nxt = gs[k + 1][0]["s"] if k + 1 < len(gs) else g[-1]["e"] + 0.5
+        steps = []
+        for i, w in enumerate(g):
+            a = g[0]["s"] if i == 0 else w["s"]
+            b = g[i + 1]["s"] if i + 1 < len(g) else min(max(w["e"] + 0.35, w["s"] + 0.3), nxt)
+            if steps and a - steps[-1]["a"] < 0.12:
+                steps[-1]["b"] = b; continue
+            steps.append({"a": round(a, 3), "b": round(b, 3), "i": i})
+        steps = [x for x in steps if x["b"] > x["a"]]
+        if steps: out.append({"words": [clean(w["w"], True) for w in g], "steps": steps})
+    return out
+
+
 def ts(t):
     t = max(0.0, t); return f"{int(t // 3600)}:{int(t % 3600 // 60):02d}:{t % 60:05.2f}"
 
@@ -101,24 +125,14 @@ def build(E, mode, W, H, font_path, ass_path, srt_path):
     U = min(W, H)                                                # text scales with the short side of the frame
     lines = []
     if mode == "styled-captions":
-        margin = int(H * (0.30 if H > W else 0.12))              # 9:16: above the like/comment buttons and caption
-        hdr = header(W, H, font, int(U * (0.1 if H > W else 0.085)), round(U * 0.008, 1), margin, -1)
-        gs = groups(words)
-        for k, g in enumerate(gs):
-            nxt = gs[k + 1][0]["s"] if k + 1 < len(gs) else g[-1]["e"] + 0.5
-            steps = []                                          # (start, end, highlighted word)
-            for i, w in enumerate(g):
-                a = g[0]["s"] if i == 0 else w["s"]
-                b = g[i + 1]["s"] if i + 1 < len(g) else min(max(w["e"] + 0.35, w["s"] + 0.3), nxt)
-                if steps and a - steps[-1][0] < 0.12:           # words Whisper squeezed together: no flicker
-                    steps[-1][1] = b; continue
-                steps.append([a, b, i])
-            for a, b, i in steps:
-                if b <= a: continue
-                pop = r"{\fscx72\fscy72\t(0,90,\fscx100\fscy100)}" if i == 0 else ""
-                txt = " ".join((r"{\c" + HIGHLIGHT + r"}" + clean(x["w"], True) + r"{\c&H00FFFFFF&}") if j == i
-                               else clean(x["w"], True) for j, x in enumerate(g))
-                lines.append(f"Dialogue: 0,{ts(a)},{ts(b)},Sub,,0,0,0,,{pop}{txt}")
+        size, margin = caption_layout(W, H)
+        hdr = header(W, H, font, size, round(U * 0.008, 1), margin, -1)
+        for g in caption_groups(words):
+            for st in g["steps"]:
+                pop = r"{\fscx72\fscy72\t(0,90,\fscx100\fscy100)}" if st["i"] == 0 else ""
+                txt = " ".join((r"{\c" + HIGHLIGHT + r"}" + w + r"{\c&H00FFFFFF&}") if j == st["i"] else w
+                               for j, w in enumerate(g["words"]))
+                lines.append(f"Dialogue: 0,{ts(st['a'])},{ts(st['b'])},Sub,,0,0,0,,{pop}{txt}")
     else:
         hdr = header(W, H, font, int(U * 0.042), round(U * 0.0025, 1), int(H * (0.18 if H > W else 0.06)), 0)
         for a, b, text in cues(words):

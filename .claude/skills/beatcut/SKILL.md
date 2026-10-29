@@ -55,5 +55,7 @@ are the heart of the film, light-themed helper pages.
 - Lessons from earlier films are in [references/lessons.md](references/lessons.md). Read it once per event.
 - The AI steps (19_transcribe, 19b_sounds, 20_clip, search, 12_music --tracker beat_this) need the optional
   extras; if a step says they are missing, offer `python install.py --extras` (several GB: ask first).
+- Title styles other than slam, emoji captions and lower thirds need the Remotion graphics (`style.graphics:
+  remotion`, `python install.py --remotion`, Node.js 18+; ask first). Without them the built-in title is used.
 - Planned features (Remotion titles, ...) are in `ROADMAP.md` (with known limits of the AI steps). If the user asks for one that isn't built yet,
   say so and offer to build it.

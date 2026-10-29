@@ -28,7 +28,9 @@ If the event folder doesn't exist yet, create it with `event.yaml`, `project.md`
   originals (SD card, phone) still exist. Continue with what's there if not.
 - **Must-haves / must-nots**: clips they already know they want, as `file + timestamp + why`, and things
   that must stay out (people who don't want to be in it, private moments).
-- **Title & credits**: film name; title style (kinetic slam, minimal, none); credits lines (default: title + music).
+- **Title & credits**: film name; title style: slam (kinetic, default), minimal, handwritten, glitch, vhs, or none;
+  credits lines (default: title + music). Styles other than slam need the Remotion graphics (`style.graphics:
+  remotion`; if `remotion/node_modules` is missing, offer `python install.py --remotion`, ~450 MB, ask first).
 - **People**: recognise faces so everyone gets screen time? (default yes). Names on screen? (default no).
 - **Sound**: camera audio only on talking/laughing (default), more ambient sound, or music only.
 - **Subtitles** (shorts or speech-heavy films): none / speech (sentence subtitles) / styled-captions (TikTok-style

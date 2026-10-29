@@ -27,7 +27,8 @@ Shot options (keyword args on `pin`/`shot`): `cat`, `why` (shows in shotlist.csv
 `letterbox`, `slowmo` (0.5 = half speed, ≥ 50 fps sources only), `transpose` (1 = phone held sideways),
 `bite` (sound bite: punch-in zoom, music −14 dB), `legs_ramp` (fixed slow-mo ramp), `dim`, `credits`,
 `parts` (jump-cut: list of `{src, in, dur, slowmo}`), `reframe` (9:16/1:1/4:5 only: `"follow"` default,
-`"center"`, `"fit"`, or a 0-1 horizontal position), `subs` (True/False: force/hide subtitles on this shot).
+`"center"`, `"fit"`, or a 0-1 horizontal position), `subs` (True/False: force/hide subtitles on this shot), `lower_third` (`"Name"` or `{"text", "sub"}`; Remotion
+graphics only).
 
 Finding in/out points: `transcripts.md` for what is said and when, `timeline <file> <a> <b>` for the exact
 second a laugh starts or a sentence ends, `search "<description>"` for moments nobody tagged.

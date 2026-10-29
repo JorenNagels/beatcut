@@ -100,6 +100,13 @@ a crop that follows faces and motion; set `reframe="fit"` (whole frame on a blur
 0-1 position on a shot when the crop misses the action. Check the edit sheet: a crop that cuts off the person who
 falls is the most common problem.
 
+## Graphics (Remotion)
+With `style.graphics: remotion` in event.yaml, 14_render draws the title (`style.title_style`), the styled captions
+(with emoji), the end card and lower thirds with Remotion instead of the built-in title/drawtext/libass. The graphics
+are rendered once per change into render/gfx/ (a 5-min film: ~2 min at preview size) and laid over the shots, so
+always pass `--force` after switching engines or changing the plan. Tweak the look: `cd remotion && npm run studio`.
+Lower thirds: `lower_third="Vincent"` or `{"text": "Vincent", "sub": "backwards fall"}` on a shot in the plan.
+
 ## Subtitles
 `subtitles:` in event.yaml (or `finish(..., subtitles=)`): `speech` (sentence subtitles, bottom) or
 `styled-captions` (TikTok style, 1-3 big words, current word yellow). Only audible speech gets subtitles (shots with

@@ -1,0 +1,18 @@
+{
+  "name": "beatcut-graphics",
+  "private": true,
+  "description": "Titles, captions, end cards and lower thirds for beatcut, rendered as transparent overlays (ProRes 4444) that 14_render puts on the film. Optional: python install.py --remotion",
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.ts"
+  },
+  "dependencies": {
+    "@remotion/bundler": "4.0.539",
+    "@remotion/cli": "4.0.539",
+    "@remotion/google-fonts": "4.0.539",
+    "@remotion/renderer": "4.0.539",
+    "react": "19.1.10",
+    "react-dom": "19.1.10",
+    "remotion": "4.0.539"
+  }
+}

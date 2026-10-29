@@ -36,6 +36,9 @@ style:
   grain: true
   letterbox_scenic: true
   # font: path/to/font.ttf       # default: bundled Oswald
+  graphics: remotion               # remotion (title styles, emoji captions, end card; install.py --remotion) | python
+  title_style: slam                # slam | minimal | handwritten | glitch | vhs   (all but slam need remotion)
+  accent: "#FFE600"                # highlighted caption word, lower-third bar
   photos: false                    # Ken Burns stills (user default: off)
   name_cards: false
 
@@ -45,6 +48,7 @@ sound:
 
 subtitles: none                    # none | speech | styled-captions   (needs 19_transcribe; shorts default to styled)
 
+# captions: {emoji: true}         # styled captions: an emoji after a matching group; false, or {word: emoji} to add
 # transcribe: {model: large-v3, language: nl}   # Whisper model (default large-v3 on NVIDIA, else small); force a language
 # clip: {prompts: {action: ["a person surfing a wave"]}}   # 20_clip --autotag: extra/other prompts per category
 

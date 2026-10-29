@@ -4,6 +4,7 @@
     python3 install.py         (macOS / Linux)
     --yes        answer yes to every question (ffmpeg and the AI extras)
     --extras     install the AI extras without asking;  --no-extras  skip them
+    --remotion   install the Remotion graphics without asking;  --no-remotion  skip them
 
 What it does:
   1. creates .venv and installs the Python packages (requirements.txt)
@@ -12,7 +13,9 @@ What it does:
   4. offers the optional AI extras (~3-5 GB, requirements-ai.txt): Whisper transcripts and subtitles, laughter
      detection, image search / auto-tags, a neural beat tracker. PyTorch comes in the right build for the machine
      (CUDA on an NVIDIA GPU, the standard build on macOS and CPU-only PCs). Models download on first use.
-  5. links the Claude Code skill into ~/.claude/skills/beatcut, so /beatcut works in any folder
+  5. offers the optional Remotion graphics (~450 MB, needs Node.js 18+): title styles (slam, minimal, handwritten,
+     glitch, vhs), captions with emoji, animated end card, lower thirds. Without it the built-in title is used.
+  6. links the Claude Code skill into ~/.claude/skills/beatcut, so /beatcut works in any folder
 Safe to run again, e.g. after moving the repo or pulling updates."""
 import os, shutil, subprocess, sys, urllib.request, venv
 from pathlib import Path
@@ -30,6 +33,7 @@ MODELS = {
 }
 YES = "--yes" in sys.argv
 EXTRAS = True if "--extras" in sys.argv or YES else False if "--no-extras" in sys.argv else None
+REMOTION = True if "--remotion" in sys.argv or YES else False if "--no-remotion" in sys.argv else None
 
 
 def step(msg):
@@ -129,6 +133,25 @@ def extras():
     print("ok" if have_extras() else "something is missing - see the messages above")
 
 
+def remotion():
+    step("Remotion graphics (optional)")
+    rdir = REPO / "remotion"
+    if (rdir / "node_modules" / "@remotion" / "renderer").exists() and REMOTION is None:
+        print("already installed"); return
+    print("Animated titles in five styles, captions with emoji, end card and lower thirds, made with Remotion\n"
+          "(free for individuals and small teams; companies: remotion.dev/license). ~330 MB of packages + a\n"
+          "~120 MB headless Chrome on first use. Without it the built-in title and captions are used.")
+    if REMOTION is False or (REMOTION is None and not ask("Install the Remotion graphics?")):
+        print("skipped - run `python install.py --remotion` any time to add them"); return
+    npm, node = shutil.which("npm"), shutil.which("node")
+    version = subprocess.run([node, "--version"], capture_output=True, text=True).stdout.strip() if node else ""
+    if not npm or not version or int(version.lstrip("v").split(".")[0]) < 18:
+        print("Node.js 18 or newer is needed: Windows: winget install OpenJS.NodeJS.LTS, macOS: brew install node.\n"
+              "Then run `python install.py --remotion`."); return
+    subprocess.run([npm, "ci" if (rdir / "package-lock.json").exists() else "install", "--no-audit", "--no-fund"], cwd=rdir, check=True)
+    print("ok - set `style.graphics: remotion` in an event's event.yaml to use it")
+
+
 def remove_old_link():
     """the project used to be called highlight-film: drop that skill link if it points into this repo or nowhere"""
     old = LINK.parent / "highlight-film"
@@ -166,7 +189,7 @@ def link_skill():
 
 def main():
     print(f"beatcut setup in {REPO}")
-    python_env(); models(); ffmpeg(); extras(); link_skill()
+    python_env(); models(); ffmpeg(); extras(); remotion(); link_skill()
     print("\nDone. Make a film: put your footage in <event folder>/media, open Claude Code in the event folder "
           "and type /beatcut")
 

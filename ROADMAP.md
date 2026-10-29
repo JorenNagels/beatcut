@@ -1,6 +1,6 @@
 # Roadmap
 
-Stages 1-4 are done.
+Stages 1-5 are done.
 - **Stage 1-2**: a reusable pipeline, the `/beatcut` skill with the setup interview, per-event config, and the
   first film (a ski trip) reproduced exactly from the new setup.
 - **Stage 3: better moment finding + hand-tuning** (AI parts need `python install.py --extras`)
@@ -31,21 +31,18 @@ Known limits
 - beat_this downloads its model from cloud.cp.jku.at; on 2026-10-29 that server's TLS certificate had expired, so
   12_music fell back to the grid tracker (it says so and keeps working).
 - The subject-following crop misses fast skiers entering from the edge; check the edit sheet and set `reframe`.
-- Captions have no emoji (libass draws no colour emoji); Remotion (stage 5) would add them.
+- The built-in (libass) captions have no emoji; the Remotion captions (stage 5) do.
 - Whisper hallucinates short lines ("Ja.") on wind noise; low-confidence lines are kept in transcripts.md with
   their confidence so they can be ignored.
 
-## Stage 5: Remotion for titles and captions (optional)
-**What Remotion is:** a free (for individuals) framework where you build video graphics as React/TypeScript
-components and render them to video frames. The output is the same kind of transparent title overlay as now,
-but with web design tools: any Google font, smooth spring animations, shapes, masks, emoji, gradients.
-- `remotion/` sub-project: `KineticTitle`, `Captions` (word-by-word captions with emoji and richer motion than
-  the libass version), `LowerThird`, `EndCard`
-  compositions that read their text/timing from edl.json, rendered as transparent PNG sequences (or ProRes 4444)
-  and overlaid by 14_render exactly like the current Python title frames.
-- The Python title (16_title.py) stays as the fallback, so Node is never required.
-- Title styles to choose in the interview: slam (current), minimal, handwritten, glitch, retro VHS.
-- Needs Node (already installed: v26) and ~300 MB of npm packages; ask before installing.
+- **Stage 5: Remotion graphics** (optional: `python install.py --remotion`, needs Node.js 18+)
+  - `remotion/`: `Title` in five styles (slam, minimal, handwritten, glitch, vhs), `Captions` (word-by-word with
+    emoji and spring motion), `EndCard`, `LowerThird`; one `Overlay` composition places them all on the timeline.
+  - `pipeline/graphics_lib.py` turns the EDL into that overlay (cached by content), and 14_render lays the right
+    stretch of it over each shot it touches. Per shot, because ffmpeg restarts its filters on the joined film when
+    the shots' colour tags change, which loses a long overlay's place.
+  - Opt-in per event: `style.graphics: remotion`; the Python title (16_title.py) stays the default and the fallback,
+    so Node is never required and existing films render unchanged.
 
 ## Ideas parked
 - Music suggestions: analyse the footage mood + length, propose songs with BPM/energy that fit (user picks).

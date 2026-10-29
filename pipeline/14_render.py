@@ -7,6 +7,8 @@ slow motion (>= 50 fps sources; speed ramps = shot split into parts), muted cool
 shots. Shots are joined losslessly; the final pass overlays the kinetic title (16_title.py frames) and credits,
 fades in/out, burns in subtitles (edl "subtitles": speech | styled-captions, from 19_transcribe; see subs_lib.py)
 and (final) adds grain.
+Graphics: style.graphics python (default: 16_title frames, drawtext credits, libass captions) or remotion (graphics_lib:
+one transparent track with title / captions / end card / lower thirds, laid over the shots it touches).
 Audio (numpy): the music is a list of cues from edl.json (song part -> timeline position, fades), so the plan decides
 where songs change (best under a talking clip, so the music never stops); music dips 6 dB under clips with voices
 (soft 0.25 s ramps), 14 dB under sound bites; clip sound loudness-matched; peak limiter.
@@ -20,7 +22,7 @@ from PIL import Image, ImageFilter, ImageOps
 from scipy.ndimage import maximum_filter1d, uniform_filter1d
 from common import ROOT, SRC, FFMPEG, PIPELINE, DEFAULT_FONT, MODELS, EDL_NAME, load_json, cfg, event_path, \
     edl_file, out_name, frame_size, file_id
-import subs_lib
+import subs_lib, graphics_lib
 
 MODE = sys.argv[1] if len(sys.argv) > 1 else "preview"
 FORCE = "--force" in sys.argv
@@ -52,6 +54,7 @@ GRADES = {
 }
 GRADE = GRADES.get(cfg("style.grade", "cool-muted"), cfg("style.grade", "cool-muted"))   # preset or raw filter
 GRAIN = cfg("style.grain", True)
+GFX = graphics_lib.engine()                  # python: 16_title + drawtext credits + libass; remotion: overlays
 SHARP = ",unsharp=5:5:0.5" if MODE == "final" else ""
 LB = round(H * 0.1278) if W > H else 0                 # 2.39:1 letterbox only on landscape films
 LETTERBOX = f",drawbox=x=0:y=0:w=iw:h={LB}:color=black:t=fill,drawbox=x=0:y=ih-{LB}:w=iw:h={LB}:color=black:t=fill"
@@ -152,7 +155,19 @@ def encode_args(n):
             "-pix_fmt", "yuv420p", "-g", str(FPS), "-video_track_timescale", "15360"]
 
 
-def video_cmd(s, src, a, n, sp, out):
+OV, OV_RANGES = None, []                     # remotion graphics track and the frame ranges it draws on
+
+
+def with_graphics(vf, f0, n):
+    """extra inputs + filter graph that lay this stretch (timeline frames f0..f0+n) of the graphics track over
+    the shot. Done per shot, not on the joined film: ffmpeg restarts its filters when the shots' colour tags change,
+    which loses an overlay's place. ProRes frames are all keyframes, so the seek is frame-exact."""
+    if not OV or not any(a < f0 + n and f0 < b for a, b in OV_RANGES): return [], vf
+    return (["-ss", f"{max(0, f0 / FPS - 0.0001):.4f}", "-i", str(OV)],
+            f"[0:v]{vf}[base];[1:v]setpts=PTS-STARTPTS[g];[base][g]overlay=eof_action=pass,format=yuv420p")
+
+
+def video_cmd(s, src, a, n, sp, out, f0):
     D = n / FPS
     sw, sh = disp_dims(src)
     pre = f"setpts=PTS/{sp}," if sp != 1 else ""
@@ -185,6 +200,8 @@ def video_cmd(s, src, a, n, sp, out):
     if s.get("title_frame0") is not None:            # burn the kinetic title into this shot (frames from 16_title.py)
         extra = ["-start_number", str(s["title_frame0"]), "-framerate", str(FPS), "-i", str(TITLE_DIR / "%04d.png")]
         vf = f"[0:v]{vf}[base];[1:v]format=rgba,setpts=PTS-STARTPTS[t];[base][t]overlay=eof_action=pass,format=yuv420p"
+    else:
+        extra, vf = with_graphics(vf, f0, n)
     return [FFMPEG, "-v", "error", "-y", "-ss", f"{max(0, a):.3f}", "-t", f"{D * sp + 0.4:.3f}", "-i", str(SRC / src)] + extra + \
            ["-filter_complex", vf] + encode_args(n) + [str(out)]
 
@@ -192,7 +209,7 @@ def video_cmd(s, src, a, n, sp, out):
 def render_seg(i_s):
     """returns list of rendered files for this shot (several for speed ramps)"""
     i, s = i_s
-    n = s["frames"]
+    n = s["frames"]; f0 = round(s["t0"] * FPS)
     if s["type"] == "photo":
         out = SEG / f"{i:03d}.mp4"
         if out.exists() and not FORCE: return [out]
@@ -200,8 +217,8 @@ def render_seg(i_s):
         lb = LETTERBOX if s.get("letterbox") else ""
         vf = (f"scale=w='trunc({W}*(1.0+0.07*t/{D:.3f})/2)*2':h=-2:eval=frame:flags=bicubic,"
               f"crop={W}:{H},setsar=1,{GRADE}{lb},format=yuv420p")
-        cmd = [FFMPEG, "-v", "error", "-y", "-loop", "1", "-framerate", str(FPS), "-t", f"{D + 0.5:.3f}", "-i", str(base),
-               "-vf", vf] + encode_args(n) + [str(out)]
+        extra, g = with_graphics(vf, f0, n)
+        cmd = [FFMPEG, "-v", "error", "-y", "-loop", "1", "-framerate", str(FPS), "-t", f"{D + 0.5:.3f}", "-i", str(base)] +             extra + (["-filter_complex", g] if extra else ["-vf", vf]) + encode_args(n) + [str(out)]
         jobs = [(cmd, out)]
     else:
         parts = s.get("parts") or [{"src": s["src"], "in": s["in"], "dur": s["dur"], "slowmo": s.get("slowmo", 1.0)}]
@@ -209,7 +226,7 @@ def render_seg(i_s):
         jobs = []
         for k, (p, nf) in enumerate(zip(parts, frames)):
             out = SEG / (f"{i:03d}.mp4" if len(parts) == 1 else f"{i:03d}_{k}.mp4")
-            jobs.append((video_cmd(s, p["src"], p["in"], nf, p.get("slowmo", 1.0), out), out))
+            jobs.append((video_cmd(s, p["src"], p["in"], nf, p.get("slowmo", 1.0), out, f0 + sum(frames[:k])), out))
     for cmd, out in jobs:
         if out.exists() and not FORCE: continue
         r = subprocess.run(cmd, capture_output=True, text=True)
@@ -320,12 +337,17 @@ def main():
     segs = E["segments"]
     ta = E["title_anim"]
     nt = sum(s["frames"] for s in segs if s["section"] == "title")
-    if nt and (FORCE or not (TITLE_DIR / f"{nt - 1:04d}.png").exists()):
+    if nt and GFX == "python" and (FORCE or not (TITLE_DIR / f"{nt - 1:04d}.png").exists()):
         subprocess.run([sys.executable, str(PIPELINE / "16_title.py"), str(W), str(H), str(nt), str(ta["bpm"])]
                        + (["--edl", EDL_NAME] if EDL_NAME else []), check=True)
     f0 = 0
     for s in segs:
-        if s["section"] == "title": s["title_frame0"] = f0; f0 += s["frames"]
+        if s["section"] == "title" and GFX == "python": s["title_frame0"] = f0; f0 += s["frames"]
+    global OV, OV_RANGES
+    if GFX == "remotion":
+        its = graphics_lib.items(E, W, H, FPS)
+        OV = graphics_lib.render(its, FONT, W, H, FPS, sum(s["frames"] for s in segs))
+        OV_RANGES = [(f, f + p["frames"]) for f, _, p in its]
     with ThreadPoolExecutor(6) as ex:
         files = [f for fs in ex.map(render_seg, enumerate(segs)) for f in fs]
     lst = TMP / f"concat_{NAME}.txt"
@@ -339,11 +361,12 @@ def main():
         ass = TMP / f"subs_{NAME}.ass"
         n = subs_lib.build(E, E["subtitles"], W, H, FONT, ass, R / f"{NAME}.srt")
         print(f"subtitles ({E['subtitles']}): {n} words" + ("" if n else " - none found; run 19_transcribe first?"))
-        if n: subs = [f"ass={ass.relative_to(ROOT).as_posix()}:fontsdir=render/fonts"]
-    chain = ",".join(credits(segs) + subs + [f"fade=t=in:st=0:d={fi}" for fi in [fin] if fi]
-                     + [f"fade=t=out:st={D - fo:.2f}:d={fo}" for fo in [fout] if fo]
-                     + (["noise=c0s=7:c0f=t+u:c1s=3:c2s=3"] if MODE == "final" and GRAIN else []))
-    fc = f"[0:v]{chain},format=yuv420p[v]"
+        if n and not (GFX == "remotion" and E["subtitles"] == "styled-captions"):    # remotion draws those
+            subs = [f"ass={ass.relative_to(ROOT).as_posix()}:fontsdir=render/fonts"]
+    pre = (credits(segs) if GFX == "python" else []) + subs
+    post = ([f"fade=t=in:st=0:d={fi}" for fi in [fin] if fi] + [f"fade=t=out:st={D - fo:.2f}:d={fo}" for fo in [fout] if fo]
+            + (["noise=c0s=7:c0f=t+u:c1s=3:c2s=3"] if MODE == "final" and GRAIN else []))
+    fc = f"[0:v]{','.join(pre + post) or 'null'},format=yuv420p[v]"
     script = TMP / f"video_fc_{NAME}.txt"; script.write_text(fc, encoding="utf-8")
     out = R / f"{NAME}.mp4"
     cmd = [FFMPEG, "-v", "error", "-y", "-i", str(joined.relative_to(ROOT)), "-i", str(wav.relative_to(ROOT)),
