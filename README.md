@@ -1,7 +1,7 @@
-# highlight-film
+# beatcut
 
 Turn a folder of trip or event footage (GoPro, phones, WhatsApp copies, photos) into a beat-synced highlight film
-without watching everything yourself. A [Claude Code](https://claude.com/claude-code) skill, `/highlight-film`,
+without watching everything yourself. A [Claude Code](https://claude.com/claude-code) skill, `/beatcut`,
 asks you a few questions, analyses the footage, finds the best and funniest moments, cuts them to the beat of your
 music and renders the film. You give feedback on previews until it's right.
 
@@ -18,19 +18,19 @@ You need [Python 3.10+](https://www.python.org/downloads/), git and [Claude Code
 
 **Windows**
 ```powershell
-git clone https://github.com/JorenNagels/highlight-film
-cd highlight-film
+git clone https://github.com/JorenNagels/beatcut
+cd beatcut
 python install.py
 ```
 **macOS**
 ```bash
-git clone https://github.com/JorenNagels/highlight-film
-cd highlight-film
+git clone https://github.com/JorenNagels/beatcut
+cd beatcut
 python3 install.py
 ```
 The installer sets up a Python environment, downloads two small face models (~40 MB), checks for ffmpeg
 (offers to install it with winget or [Homebrew](https://brew.sh)) and links the skill into `~/.claude/skills`, so
-`/highlight-film` works in every Claude Code session. Run it again after moving the repo or pulling updates.
+`/beatcut` works in every Claude Code session. Run it again after moving the repo or pulling updates.
 
 **Even easier:** open Claude Code in the cloned folder and say *"install this"*.
 
@@ -44,12 +44,12 @@ The installer sets up a Python environment, downloads two small face models (~40
        whatsapp/     VIDEO-2027-07-03-14-22-10.mp4 …
      music/          the songs (optional: Claude can suggest some)
    ```
-2. Open Claude Code in `ibiza-2027` and type **`/highlight-film`**.
+2. Open Claude Code in `ibiza-2027` and type **`/beatcut`**.
 3. Answer a few questions: what it is, length and format, the feel, music, title, must-have clips.
 4. Check the review page, pick the music, watch the previews, give feedback with timestamps ("0:58 is boring",
    "add GX010023 from 0:10, the fall"), then render the final film.
 
-Come back another day? Open Claude Code in the same folder and run `/highlight-film` again; it continues from
+Come back another day? Open Claude Code in the same folder and run `/beatcut` again; it continues from
 `project.md`.
 
 ### Footage tips
@@ -76,9 +76,9 @@ ibiza-2027/
 
 ## Run steps by hand
 ```
-python hf.py <event-folder> list
-python hf.py <event-folder> 13_edl
-python hf.py <event-folder> 14_render preview --force
+python beatcut.py <event-folder> list
+python beatcut.py <event-folder> 13_edl
+python beatcut.py <event-folder> 14_render preview --force
 ```
 
 | step | what |
@@ -100,12 +100,12 @@ python hf.py <event-folder> 14_render preview --force
 ```
 install.py                  one-time setup (Windows, macOS, Linux)
 AGENTS.md                   instructions for coding agents (CLAUDE.md imports it)
-hf.py                       step runner (sets the event, uses .venv)
+beatcut.py                       step runner (sets the event, uses .venv)
 pipeline/                   the steps + common.py (config) + edl_lib.py (plan toolkit)
 templates/                  event.yaml, plan.py (one-song starter), project.md
 examples/                   ski-trip-plan.py (complete two-song film), tags_source.py
 fonts/                      Oswald (SIL Open Font License), the default title font
-.claude/skills/highlight-film/   SKILL.md + references (interview, workflow, plan guide, default taste, lessons)
+.claude/skills/beatcut/   SKILL.md + references (interview, workflow, plan guide, default taste, lessons)
 ROADMAP.md                  next: Whisper, CLIP search, Resolve export, TikTok shorts + subtitles, Remotion titles
 ```
 

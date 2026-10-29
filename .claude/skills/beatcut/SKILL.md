@@ -1,11 +1,11 @@
 ---
-name: highlight-film
+name: beatcut
 description: Make a highlight film (or short vertical clips) from a folder of trip/event footage - GoPro, phone, WhatsApp copies, photos - without the user watching everything. Interviews the user, analyses and de-duplicates the footage, finds the best and funniest moments, cuts to the beat of their music and renders with ffmpeg; then iterates on their feedback. Use when the user wants a trip video, holiday film, vacation/ski/wedding/birthday/festival edit, highlight reel, recap, montage or TikTok/Reels from their own footage, or wants to continue/redo an earlier film made with this pipeline.
 ---
 
 # Highlight film
 
-The `highlight-film` repo holds a generic Python + ffmpeg pipeline. Its path is in `repo-path.txt` next to this
+The `beatcut` repo holds a generic Python + ffmpeg pipeline. Its path is in `repo-path.txt` next to this
 file (written by `install.py`); if that file is missing, ask the user where they cloned the repo and to run
 `python install.py` there (`python3` on macOS). Each film is
 an **event folder** elsewhere on disk holding `event.yaml` (the interview answers), the hand-made decisions
@@ -13,7 +13,7 @@ an **event folder** elsewhere on disk holding `event.yaml` (the interview answer
 files go to the event's work folder. Run every step as:
 
 ```
-python <repo>/hf.py <event-folder> <step> [args]      # python3 on macOS; e.g. python hf.py D:\trips\ibiza-2027 02_dedup
+python <repo>/beatcut.py <event-folder> <step> [args]      # python3 on macOS; e.g. python beatcut.py D:\trips\ibiza-2027 02_dedup
 ```
 
 ## How to work

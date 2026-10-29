@@ -1,7 +1,7 @@
 """Run a pipeline step for an event.
 
-  python hf.py <event-folder> <step> [args...]       e.g.  python hf.py ~/trips/ibiza-2027 14_render preview
-  python hf.py <event-folder> list                   show the steps
+  python beatcut.py <event-folder> <step> [args...]       e.g.  python beatcut.py ~/trips/ibiza-2027 14_render preview
+  python beatcut.py <event-folder> list                   show the steps
 
 <step> is a script name in pipeline/ without .py (a unique prefix is enough: '13' -> 13_edl).
 The event folder must contain event.yaml. Uses the repo's .venv Python when it exists."""
@@ -27,7 +27,7 @@ def main():
     if len(match) != 1:
         sys.exit(f"step '{step}' matches {match or 'nothing'}; steps: {', '.join(steps)}")
     py = str(VENV_PY) if VENV_PY.exists() else sys.executable
-    env = dict(os.environ, HF_EVENT=str(event), PYTHONIOENCODING="utf-8")
+    env = dict(os.environ, BEATCUT_EVENT=str(event), PYTHONIOENCODING="utf-8")
     r = subprocess.run([py, str(PIPE / f"{match[0]}.py")] + sys.argv[3:], cwd=PIPE, env=env)
     sys.exit(r.returncode)
 

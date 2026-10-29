@@ -1,6 +1,6 @@
 # Writing plan.py
 
-`plan.py` lives in the event folder and describes one film. It runs through `hf 13_edl` with
+`plan.py` lives in the event folder and describes one film. It runs through `beatcut 13_edl` with
 `from edl_lib import *`. Start from `templates/plan.py` (one song, config-driven) or `examples/ski-trip-plan.py`
 (two songs, talk transitions, chapters, funny breakdown, outro).
 

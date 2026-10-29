@@ -1,4 +1,4 @@
-"""One-time setup for highlight-film. Works on Windows and macOS (and Linux).
+"""One-time setup for beatcut. Works on Windows and macOS (and Linux).
 
     python install.py          (Windows)
     python3 install.py         (macOS / Linux)
@@ -8,7 +8,7 @@ What it does:
   1. creates .venv and installs the Python packages (requirements.txt)
   2. downloads the two face models (~40 MB) into models/
   3. checks for ffmpeg and offers to install it (winget on Windows, Homebrew on macOS)
-  4. links the Claude Code skill into ~/.claude/skills/highlight-film, so /highlight-film works in any folder
+  4. links the Claude Code skill into ~/.claude/skills/beatcut, so /beatcut works in any folder
 Safe to run again, e.g. after moving the repo or pulling updates."""
 import os, shutil, subprocess, sys, urllib.request, venv
 from pathlib import Path
@@ -16,8 +16,8 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent
 VENV = REPO / ".venv"
 PY = VENV / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
-SKILL = REPO / ".claude" / "skills" / "highlight-film"
-LINK = Path.home() / ".claude" / "skills" / "highlight-film"
+SKILL = REPO / ".claude" / "skills" / "beatcut"
+LINK = Path.home() / ".claude" / "skills" / "beatcut"
 MODELS = {
     "face_detection_yunet_2023mar.onnx":
         "https://github.com/opencv/opencv_zoo/raw/main/models/face_detection_yunet/face_detection_yunet_2023mar.onnx",
@@ -87,9 +87,21 @@ def ffmpeg():
         print("skipped - the pipeline needs ffmpeg before the first step")
 
 
+def remove_old_link():
+    """the project used to be called highlight-film: drop that skill link if it points into this repo or nowhere"""
+    old = LINK.parent / "highlight-film"
+    if not os.path.lexists(old): return
+    try: target = Path(os.readlink(old).removeprefix("\\\\?\\"))
+    except OSError: return                            # a real folder: not ours to touch
+    if not target.exists() or REPO.resolve() in target.resolve().parents:
+        os.rmdir(old) if os.name == "nt" else os.unlink(old)
+        print(f"removed the old /highlight-film link ({old})")
+
+
 def link_skill():
     step("Claude Code skill")
     LINK.parent.mkdir(parents=True, exist_ok=True)
+    remove_old_link()
     if LINK.exists() or os.path.lexists(LINK):
         try:
             target = Path(os.readlink(LINK).removeprefix("\\\\?\\"))   # symlink (macOS) or junction (Windows)
@@ -107,14 +119,14 @@ def link_skill():
         else:
             os.symlink(SKILL, LINK, target_is_directory=True)
         print(f"linked: {LINK} -> {SKILL}")
-    (SKILL / "repo-path.txt").write_text(str(REPO), encoding="utf-8")   # the skill reads this to find hf.py
+    (SKILL / "repo-path.txt").write_text(str(REPO), encoding="utf-8")   # the skill reads this to find beatcut.py
 
 
 def main():
-    print(f"highlight-film setup in {REPO}")
+    print(f"beatcut setup in {REPO}")
     python_env(); models(); ffmpeg(); link_skill()
     print("\nDone. Make a film: put your footage in <event folder>/media, open Claude Code in the event folder "
-          "and type /highlight-film")
+          "and type /beatcut")
 
 
 if __name__ == "__main__":

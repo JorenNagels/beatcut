@@ -1,6 +1,6 @@
 # Roadmap
 
-Stages 1-2 are done: a reusable pipeline, the `/highlight-film` skill with the setup interview, per-event config,
+Stages 1-2 are done: a reusable pipeline, the `/beatcut` skill with the setup interview, per-event config,
 and the first film (a ski trip) reproduced exactly from the new setup (same edit, bit-identical sound, identical frames).
 
 ## Stage 3: better moment finding + hand-tuning

@@ -1,10 +1,10 @@
-"""Shared paths and helpers for the highlight-film pipeline.
+"""Shared paths and helpers for the beatcut pipeline.
 
 Every step works on one *event* (a trip, wedding, weekend ...). The event folder holds event.yaml plus the
 hand-made decisions (tags.json, plan.py, project.md, people_names.json). event.yaml points to:
   source: the footage folder (read-only: never written to)
   work:   where everything generated goes (cache, features, sheets, renders)
-The event folder comes from the HF_EVENT environment variable (set by hf.py)."""
+The event folder comes from the BEATCUT_EVENT environment variable (set by beatcut.py)."""
 import json, os, subprocess, shutil
 from pathlib import Path
 import yaml
@@ -20,9 +20,9 @@ try:                                                  # iPhone originals: .HEIC 
 except ImportError:
     pass
 
-if not os.environ.get("HF_EVENT"):
-    raise SystemExit("HF_EVENT is not set - run steps through hf.py:  python hf.py <event-folder> <step> [args]")
-EVENT_DIR = Path(os.environ["HF_EVENT"]).resolve()
+if not os.environ.get("BEATCUT_EVENT"):
+    raise SystemExit("BEATCUT_EVENT is not set - run steps through beatcut.py:  python beatcut.py <event-folder> <step> [args]")
+EVENT_DIR = Path(os.environ["BEATCUT_EVENT"]).resolve()
 EVENT = yaml.safe_load((EVENT_DIR / "event.yaml").read_text(encoding="utf-8")) or {}
 
 

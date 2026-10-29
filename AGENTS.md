@@ -1,16 +1,16 @@
-# highlight-film
+# beatcut
 
 Instructions for coding agents (Claude Code, Codex, Cursor, ...). Python + ffmpeg pipeline and a Claude Code skill that turn trip/event footage into a beat-synced highlight film.
-Read README.md for the layout; the skill is in `.claude/skills/highlight-film/`.
+Read README.md for the layout; the skill is in `.claude/skills/beatcut/`.
 
 ## If the user asks to install / set up
 Run `python install.py` (`python3` on macOS/Linux). It creates `.venv`, installs requirements, downloads the face
 models, checks ffmpeg (offers winget/Homebrew; ask the user before installing) and links the skill into
 `~/.claude/skills`. Afterwards tell them: put footage in `<event folder>/media`, open Claude Code in the event
-folder, type `/highlight-film`.
+folder, type `/beatcut`.
 
 ## Working on the pipeline
-- Steps are `pipeline/NN_name.py`, run via `python hf.py <event-folder> <step>`; they need `HF_EVENT` (hf.py sets it).
+- Steps are `pipeline/NN_name.py`, run via `python beatcut.py <event-folder> <step>`; they need `BEATCUT_EVENT` (beatcut.py sets it).
 - Per-event data never goes in the repo: event.yaml, plan.py, tags, people and project.md live in the event folder.
 - Source footage is read-only. Generated files go to the event's `work` folder.
 - Files are identified by their path inside the source folder (`cam2/GX010001.MP4`); use `common.base()` for
