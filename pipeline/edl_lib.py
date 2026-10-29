@@ -5,17 +5,21 @@ pin()/pin_best(), lays the timeline out with place()/chapter()/pick(), and ends 
 Rules enforced here: a moment (file + seconds) is never used twice; pinned shots are reserved before fillers;
 fillers come from tags.json ranked by tag rating + signal quality (+ bonus for the reviewed candidates);
 slow motion only from >= 50 fps sources; camera sound only where the voice detector hears people.
-See examples/ski-trip-plan.py for a complete film."""
+Optional inputs when they exist: tags_auto.json (20_clip --autotag) when there is no hand-made tags.json,
+sounds.json (19b_sounds: laughter/cheering count as voices), scenes.json (21_scenes: windows never cross a cut).
+See examples/ski-trip-plan.py for a complete film, templates/plan_short.py for a 9:16 short."""
 import glob, importlib, math
 from collections import Counter, defaultdict
 import numpy as np
+import common
 from common import ROOT, CACHE, load_json, save_json, cfg, base
 
 cand_mod = importlib.import_module("06_candidates")
 
 FPS = 30
 inv = {r["file"]: r for r in load_json("inventory.json")}
-tags = load_json("tags.json")
+tags = load_json("tags.json") or load_json("tags_auto.json")
+if tags is None: raise SystemExit("no tags.json (visual pass) or tags_auto.json (20_clip --autotag) yet")
 idx = load_json("signals_index.json")
 M = load_json("music.json")
 CANDS = load_json("candidates.json", [])
@@ -23,6 +27,8 @@ PEOPLE = load_json("people.json", [])
 NAMES = {k: v["face_ids"] for k, v in (load_json("people_names.json") or {"people": {}})["people"].items()}
 EVENTS = load_json("events.json", [])
 HINTS = (load_json("dedup.json") or {}).get("hints", {})
+SOUNDS = load_json("sounds.json", [])               # 19b_sounds: laughter, cheering, singing, shouting
+SCENES = load_json("scenes.json", {})               # 21_scenes: shot changes inside a file (seconds)
 feats = {}
 
 
@@ -35,6 +41,7 @@ class Settings:
     indoor_videos = set()      # for best_face(): landscape videos filmed indoors
     requested_sound = set()    # files the user wants to hear (camera sound kept even without detected voices)
     cam_override = []          # (file, in_from, in_to, level): manual sound choices from review
+    allow_vertical = False     # shorts (9:16): vertical phone clips may be fillers too
 
 
 S = Settings()
@@ -125,10 +132,15 @@ def window_for(t, L, s_fn_cat):
     n = len(s); Li = max(1, math.ceil(L))
     best = None
     for a in range(int(t["start"]), int(min(t["end"], n)) - Li + 1):
-        if not free(f, a, a + L): continue
+        if not free(f, a, a + L) or crosses_cut(f, a, a + L): continue
         q = float(np.mean(s[a:a + Li]))
         if best is None or q > best[1]: best = (a, q)
     return best
+
+
+def crosses_cut(f, a, b):
+    """a shot change (scenes.json) inside [a, b] (0.3 s slack at the edges)"""
+    return any(a + 0.3 < c < b - 0.3 for c in SCENES.get(f, ()))
 
 
 CAND_WIN = defaultdict(list)
@@ -137,6 +149,8 @@ for c in CANDS: CAND_WIN[c["file"]].append((c["start"], c["end"]))
 VOICE = defaultdict(list)
 for e in EVENTS:
     if e["kind"] == "voice": VOICE[e["file"]].append(e)
+for e in SOUNDS:                                   # model-detected laughter etc. weigh like strong voice peaks
+    if e["kind"] in ("laugh", "cheer", "sing", "shout"): VOICE[e["file"]].append(e)
 
 
 def voice_in(f, a, b):
@@ -145,7 +159,7 @@ def voice_in(f, a, b):
 
 
 def vertical(f):
-    return inv[f]["height"] > inv[f]["width"] or f in S.force_vertical
+    return (inv[f]["height"] > inv[f]["width"] or f in S.force_vertical) and not S.allow_vertical
 
 
 def pick(L, cats, days=None, prev=(), exclude_files=()):
@@ -266,9 +280,11 @@ def legs_ramp(s, p1=1.9, p2=2.8):
                   {"src": s["src"], "in": a + p1 + p2 * 0.5, "dur": s["dur"] - p1 - p2, "slowmo": 1.0}]
 
 
-def finish(duration, music_cues, title_t0, title_t1, title_bpm):
-    """slow-motion ramps, sound decisions, checks; writes edl.json.
-    music_cues: [{"track": role, "from": song_s, "to": song_s, "at": timeline_s, "fade_in", "fade_out", "fade_curve"}]"""
+def finish(duration, music_cues, title_t0, title_t1, title_bpm, fmt=None, subtitles=None, fades=(1.0, 3.0)):
+    """slow-motion ramps, sound decisions, checks; writes edl.json (edl_<name>.json for plan_<name>.py).
+    music_cues: [{"track": role, "from": song_s, "to": song_s, "at": timeline_s, "fade_in", "fade_out", "fade_curve"}]
+    title_t0 == title_t1: no kinetic title. fmt: "16:9" | "9:16" | "1:1" | "4:5" (default film.format);
+    subtitles: "none" | "speech" | "styled-captions" (default event.yaml subtitles); fades: picture fade in/out (s)"""
     for s in segs:
         if s.get("cat") == "crash" and s["type"] == "video" and s["dur"] >= 4.5 and not s.get("parts"): ramp(s)
         if s.get("legs_ramp"): legs_ramp(s)
@@ -288,12 +304,13 @@ def finish(duration, music_cues, title_t0, title_t1, title_bpm):
 
     title = cfg("title", {}) or {}
     edl = {"fps": FPS, "duration": round(duration, 3),
+           "format": fmt or cfg("film.format", "16:9"), "subtitles": subtitles or cfg("subtitles", "none") or "none", "fades": list(fades),
            "title_anim": {"t0": title_t0, "t1": title_t1, "bpm": title_bpm,
                           "big": title.get("big", ""), "sub": title.get("sub", ""), "tag": str(title.get("tag", ""))},
            "music": {"tracks": {k: M[k]["file"] for k in M}, "cues": music_cues},
            "title": title.get("full", ""), "credits": cfg("credits", []) or [],
            "names": sorted(NAMES), "segments": segs}
-    save_json("edl.json", edl)
+    save_json(common.edl_file(), edl)
 
     print(f"duration {duration:.1f}s ({int(duration // 60)}:{duration % 60:04.1f}), {len(segs)} shots")
     print("by section", dict(Counter(s["section"] for s in segs)))

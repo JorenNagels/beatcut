@@ -31,7 +31,10 @@ If the event folder doesn't exist yet, create it with `event.yaml`, `project.md`
 - **Title & credits**: film name; title style (kinetic slam, minimal, none); credits lines (default: title + music).
 - **People**: recognise faces so everyone gets screen time? (default yes). Names on screen? (default no).
 - **Sound**: camera audio only on talking/laughing (default), more ambient sound, or music only.
-- **Subtitles** (for shorts or speech-heavy films): none / speech only / styled 2-word captions (needs Whisper; see ROADMAP).
+- **Subtitles** (shorts or speech-heavy films): none / speech (sentence subtitles) / styled-captions (TikTok-style
+  words). Default: styled-captions on shorts, none on the film. Needs the AI extras (Whisper).
+- **Shorts**: when they want shorts too, how many and how long (15 / 30 / 60 s), and whether a short may reuse
+  moments from the film (default: no, different moments).
 
 ## Defaults when the user says "you decide"
 | field | default |

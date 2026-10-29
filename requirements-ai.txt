@@ -1,0 +1,8 @@
+# Optional AI extras (python install.py --extras). PyTorch is installed first by install.py with the right build
+# (CUDA on NVIDIA GPUs, the default build on macOS / CPU). Models download on first use.
+faster-whisper>=1.1        # 19_transcribe: speech + word timestamps (subtitles, quotes, laughs)
+open_clip_torch>=2.26      # 20_clip / search: "powder spray", auto-tags
+transformers               # SigLIP tokenizer for open_clip
+sentencepiece
+panns-inference>=0.1.1     # 19b_sounds: laughter, cheering, singing (AudioSet model, ~330 MB on first use)
+beat-this>=0.1             # 12_music --tracker beat_this: beats/downbeats for songs with tempo changes

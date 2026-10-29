@@ -5,7 +5,7 @@ hand-made decisions (tags.json, plan.py, project.md, people_names.json). event.y
   source: the footage folder (read-only: never written to)
   work:   where everything generated goes (cache, features, sheets, renders)
 The event folder comes from the BEATCUT_EVENT environment variable (set by beatcut.py)."""
-import json, os, subprocess, shutil
+import json, os, subprocess, shutil, sys
 from pathlib import Path
 import yaml
 
@@ -105,3 +105,55 @@ def file_id(name):
     """Stable short id for a source file name (used for cache file names)."""
     import hashlib
     return hashlib.md5(name.encode("utf-8")).hexdigest()[:10]
+
+
+# ---------------- several films per event (one long film + shorts) ----------------
+# plan.py -> edl.json -> render/preview.mp4;  plan_<name>.py -> edl_<name>.json -> render/<name>_preview.mp4.
+# Steps that read an EDL take  --edl <name>  (13_edl sets it from the plan file name).
+EDL_NAME = sys.argv[sys.argv.index("--edl") + 1] if "--edl" in sys.argv[:-1] else ""
+
+
+def edl_file():
+    return f"edl_{EDL_NAME}.json" if EDL_NAME else "edl.json"
+
+
+def out_name(stem):
+    """render/shotlist/sheet names per EDL: 'preview' -> 'short1_preview'"""
+    return f"{EDL_NAME}_{stem}" if EDL_NAME else stem
+
+
+FORMATS = {"16:9": (16, 9), "9:16": (9, 16), "1:1": (1, 1), "4:5": (4, 5)}
+
+
+def frame_size(fmt, mode):
+    """output size for a format: the long side is 1920 (final) or 960 (preview)"""
+    a, b = FORMATS.get(fmt, (16, 9))
+    L = 1920 if mode == "final" else 960
+    w, h = (L, L * b // a) if a >= b else (L * a // b, L)
+    return w // 2 * 2, h // 2 * 2
+
+
+def need(module, what):
+    """import an optional AI package or explain how to get it"""
+    import importlib
+    try:
+        return importlib.import_module(module)
+    except ImportError:
+        raise SystemExit(f"{what} needs the AI extras ({module} is not installed). Run:  python install.py --extras")
+
+
+def device():
+    """'cuda' on an NVIDIA GPU, 'mps' on Apple Silicon, else 'cpu' (torch is optional)"""
+    try:
+        import torch
+        if torch.cuda.is_available(): return "cuda"
+        if getattr(torch.backends, "mps", None) and torch.backends.mps.is_available(): return "mps"
+    except ImportError:
+        pass
+    return "cpu"
+
+
+def kept_videos():
+    """the analysed video files (duplicates skipped), longest first"""
+    inv = {r["file"]: r for r in load_json("inventory.json")}
+    return sorted(load_json("signals_index.json"), key=lambda f: -inv[f]["duration"]), inv

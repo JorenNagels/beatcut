@@ -10,7 +10,7 @@ days: {}                           # "2027-07-01": Travel day   (date -> short d
 film:
   length: "3-5 min"
   length_s: 210                    # target seconds (templates/plan.py uses this)
-  format: "16:9"                   # 16:9 | 9:16 (shorts, see ROADMAP) | 1:1
+  format: "16:9"                   # 16:9 | 9:16 | 1:1 | 4:5   (shorts set their own format in plan_<name>.py)
   feel: cinematic + funny          # funny | cinematic | high-energy | emotional (combine)
   reference: ""                    # a film whose structure/look to borrow
   structure: ""                    # agreed section list, filled in when planning
@@ -18,6 +18,7 @@ film:
 music:
   tracks:                          # role -> file; roles are names the plan uses
     main: music/song.mp3
+  # tracker: beat_this             # neural beat tracker (AI extras) for songs with tempo changes; default: grid
 
 must_have: []                      # - {file: GX010123.mp4, at: 14.0, bars: 3, why: "jump", sound: true, cat: action}
 
@@ -42,7 +43,10 @@ sound:
   camera_audio: voices only        # voices only | more | none
   music_never_stops: true
 
-subtitles: none                    # none | speech | styled-captions  (ROADMAP)
+subtitles: none                    # none | speech | styled-captions   (needs 19_transcribe; shorts default to styled)
+
+# transcribe: {model: large-v3, language: nl}   # Whisper model (default large-v3 on NVIDIA, else small); force a language
+# clip: {prompts: {action: ["a person surfing a wave"]}}   # 20_clip --autotag: extra/other prompts per category
 
 people:
   recognise: true

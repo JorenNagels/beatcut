@@ -5,3 +5,7 @@ pillow>=10.4
 pillow-heif>=0.18          # iPhone .HEIC photos
 imagehash>=4.3
 pyyaml>=6.0
+scenedetect>=0.6.4         # 21_scenes: shot changes inside clips
+opentimelineio>=0.17       # 22_export: timeline for DaVinci Resolve
+otio-fcp-adapter           # 22_export: Premiere / Final Cut 7 .xml
+otio-fcpx-xml-adapter      # 22_export: Final Cut Pro .fcpxml
