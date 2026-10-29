@@ -2,13 +2,17 @@
 
     python install.py          (Windows)
     python3 install.py         (macOS / Linux)
-    add --yes to install ffmpeg without asking
+    --yes        answer yes to every question (ffmpeg and the AI extras)
+    --extras     install the AI extras without asking;  --no-extras  skip them
 
 What it does:
   1. creates .venv and installs the Python packages (requirements.txt)
   2. downloads the two face models (~40 MB) into models/
   3. checks for ffmpeg and offers to install it (winget on Windows, Homebrew on macOS)
-  4. links the Claude Code skill into ~/.claude/skills/beatcut, so /beatcut works in any folder
+  4. offers the optional AI extras (~3-5 GB, requirements-ai.txt): Whisper transcripts and subtitles, laughter
+     detection, image search / auto-tags, a neural beat tracker. PyTorch comes in the right build for the machine
+     (CUDA on an NVIDIA GPU, the standard build on macOS and CPU-only PCs). Models download on first use.
+  5. links the Claude Code skill into ~/.claude/skills/beatcut, so /beatcut works in any folder
 Safe to run again, e.g. after moving the repo or pulling updates."""
 import os, shutil, subprocess, sys, urllib.request, venv
 from pathlib import Path
@@ -25,6 +29,7 @@ MODELS = {
         "https://github.com/opencv/opencv_zoo/raw/main/models/face_recognition_sface/face_recognition_sface_2021dec.onnx",
 }
 YES = "--yes" in sys.argv
+EXTRAS = True if "--extras" in sys.argv or YES else False if "--no-extras" in sys.argv else None
 
 
 def step(msg):
@@ -87,6 +92,43 @@ def ffmpeg():
         print("skipped - the pipeline needs ffmpeg before the first step")
 
 
+def nvidia():
+    """CUDA version the NVIDIA driver supports (e.g. 12.6), or None"""
+    if not shutil.which("nvidia-smi"): return None
+    out = subprocess.run(["nvidia-smi"], capture_output=True, text=True).stdout
+    import re
+    m = re.search(r"CUDA Version:\s*(\d+)\.(\d+)", out)
+    return (int(m[1]), int(m[2])) if m else None
+
+
+def have_extras():
+    return subprocess.run([str(PY), "-c", "import faster_whisper, open_clip, torch"], capture_output=True).returncode == 0
+
+
+def extras():
+    step("AI extras (optional)")
+    if have_extras() and EXTRAS is None:
+        print("already installed"); return
+    cuda = nvidia()
+    where = f"NVIDIA GPU, CUDA {cuda[0]}.{cuda[1]}" if cuda else "Apple Silicon" if sys.platform == "darwin" else "CPU only (slower)"
+    print("Speech transcripts + subtitles (Whisper), laughter/cheering detection, image search and automatic visual\n"
+          f"tags, neural beat tracking. Download: ~{'4.5' if cuda else '2.5'} GB now, models ~2 GB on first use. Runs on: {where}.\n"
+          "Everything else works without them.")
+    if EXTRAS is False or (EXTRAS is None and not ask("Install the AI extras?")):
+        print("skipped - run `python install.py --extras` any time to add them"); return
+    torch = ["torch", "torchvision", "torchaudio"]
+    if cuda and cuda >= (12, 6): idx = ["--index-url", "https://download.pytorch.org/whl/cu126"]
+    elif cuda and cuda >= (11, 8): idx = ["--index-url", "https://download.pytorch.org/whl/cu118"]
+    elif sys.platform != "darwin": idx = ["--index-url", "https://download.pytorch.org/whl/cpu"]   # no 2 GB CUDA libs
+    else: idx = []
+    pip = [str(PY), "-m", "pip", "install", "--disable-pip-version-check"]
+    print("installing PyTorch ...")
+    subprocess.run(pip + torch + idx, check=True)
+    print("installing the rest ...")
+    subprocess.run(pip + ["-r", str(REPO / "requirements-ai.txt")], check=True)
+    print("ok" if have_extras() else "something is missing - see the messages above")
+
+
 def remove_old_link():
     """the project used to be called highlight-film: drop that skill link if it points into this repo or nowhere"""
     old = LINK.parent / "highlight-film"
@@ -124,7 +166,7 @@ def link_skill():
 
 def main():
     print(f"beatcut setup in {REPO}")
-    python_env(); models(); ffmpeg(); link_skill()
+    python_env(); models(); ffmpeg(); extras(); link_skill()
     print("\nDone. Make a film: put your footage in <event folder>/media, open Claude Code in the event folder "
           "and type /beatcut")
 

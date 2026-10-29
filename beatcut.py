@@ -20,7 +20,7 @@ def main():
     if not (event / "event.yaml").exists():
         sys.exit(f"no event.yaml in {event}")
     step = sys.argv[2]
-    steps = sorted(p.stem for p in PIPE.glob("*.py") if p.stem not in ("common", "edl_lib"))
+    steps = sorted(p.stem for p in PIPE.glob("*.py") if p.stem != "common" and not p.stem.endswith("_lib"))
     if step == "list":
         print("\n".join(steps)); return
     match = [s for s in steps if s == step] or [s for s in steps if s.startswith(step)]

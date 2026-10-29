@@ -5,17 +5,19 @@ Texts come from edl.json title_anim (big / sub / tag; set in event.yaml title.*)
   beat 4  TAG pops (white box, black text, overshoot)
   beat 6  BIG word flips to outline for a beat, small shake on every beat
   beat 7.5 glitch slices, then everything is gone on the next bar (hard cut)
-python scripts/16_title.py <width> <height> <frames> <bpm>  -> render/title_<w>/0000.png ..."""
+python 16_title.py <width> <height> <frames> <bpm> [--edl <name>]  -> render/title_<w>/0000.png ...
+Sizes follow U = the height of a 16:9 frame of this width, so the title also fits 9:16 / 1:1."""
 import math, sys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageChops
-from common import ROOT, load_json
+from common import ROOT, load_json, edl_file, out_name
 
 W, H, N, BPM = int(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]), float(sys.argv[4])
 FPS, BEAT = 30, 60 / BPM
-OUT = ROOT / "render" / f"title_{W}"; OUT.mkdir(parents=True, exist_ok=True)
+OUT = ROOT / "render" / f"title_{out_name(str(W))}"; OUT.mkdir(parents=True, exist_ok=True)
 FONT = str(ROOT / "render" / "fonts" / "title.ttf")
-TA = load_json("edl.json")["title_anim"]
+TA = load_json(edl_file())["title_anim"]
+U = min(H, W * 9 / 16)
 
 
 def font(size, weight="Bold"):
@@ -38,11 +40,11 @@ def text_layer(txt, size, tracking, weight="Bold", outline=False):
     return im.crop(im.getbbox())
 
 
-BIG_SIZE = int(H * 0.30 * min(1.0, 5 / max(5, len(TA["big"]))))      # long words shrink to stay on screen
+BIG_SIZE = int(U * 0.30 * min(1.0, 5 / max(5, len(TA["big"]))))      # long words shrink to stay on screen
 BIG = text_layer(TA["big"].upper(), BIG_SIZE, int(BIG_SIZE * 0.15))
 BIG_O = text_layer(TA["big"].upper(), BIG_SIZE, int(BIG_SIZE * 0.15), outline=True)
-SUB = text_layer(TA.get("sub", "").upper() or " ", int(H * 0.055), int(H * 0.028), weight="SemiBold")
-TAG = text_layer(TA.get("tag", "") or " ", int(H * 0.06), int(H * 0.01))
+SUB = text_layer(TA.get("sub", "").upper() or " ", int(U * 0.055), int(U * 0.028), weight="SemiBold")
+TAG = text_layer(TA.get("tag", "") or " ", int(U * 0.06), int(U * 0.01))
 ease = lambda x: 1 - (1 - min(max(x, 0), 1)) ** 3
 
 
@@ -58,12 +60,12 @@ for i in range(N):
     t = i / FPS; b = t / BEAT
     im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     im.alpha_composite(Image.new("RGBA", (W, H), (0, 0, 0, 70)))                       # slight darken behind text
-    shake = (np.random.default_rng(int(b)).integers(-6, 7, 2) * H / 1080) if (b % 1) < 0.12 else (0, 0)
+    shake = (np.random.default_rng(int(b)).integers(-6, 7, 2) * U / 1080) if (b % 1) < 0.12 else (0, 0)
     cx, cy = W / 2 + shake[0], H * 0.44 + shake[1]
     # BIG word slam
     k = ease(t / 0.16)
     sc = 1.7 - 0.7 * k
-    split = int((1 - k) * H * 0.03 + (H * 0.006 if (b % 1) < 0.1 else 0))
+    split = int((1 - k) * U * 0.03 + (U * 0.006 if (b % 1) < 0.1 else 0))
     mask = BIG_O if 6 <= b < 7 else BIG
     if split:
         paste_alpha(im, mask, cx - split, cy, sc, (255, 40, 60), 0.75)
@@ -80,7 +82,7 @@ for i in range(N):
     if b >= 4 and TA.get("tag"):
         p = (b - 4) * BEAT / 0.18
         sc2 = 1.0 + 0.35 * math.exp(-6 * p) * math.cos(10 * p) if p < 1 else 1.0
-        bw, bh = int(TAG.width + H * 0.05), int(TAG.height + H * 0.03)
+        bw, bh = int(TAG.width + U * 0.05), int(TAG.height + U * 0.03)
         box = Image.new("RGBA", (bw, bh), (255, 255, 255, 255))
         yl = Image.new("RGBA", TAG.size, (15, 15, 15, 0)); yl.putalpha(TAG)
         box.alpha_composite(yl, ((bw - TAG.width) // 2, (bh - TAG.height) // 2))

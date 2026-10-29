@@ -25,8 +25,8 @@ python <repo>/beatcut.py <event-folder> <step> [args]      # python3 on macOS; e
 3. **Run the phases** in [references/workflow.md](references/workflow.md). Stop at each checkpoint (review page,
    music, preview cut) and show the user something concrete, such as a page, a sheet or a timestamped list.
 4. **Write the plan**: copy `templates/plan.py` for a simple one-song film, or adapt `examples/ski-trip-plan.py`
-   for a structured film (cold open, talk transitions, chapters, funny breakdown, outro). Read
-   [references/plan-guide.md](references/plan-guide.md) first.
+   for a structured film (cold open, talk transitions, chapters, funny breakdown, outro). Shorts: one
+   `plan_<name>.py` per short from `templates/plan_short.py`. Read [references/plan-guide.md](references/plan-guide.md) first.
 5. **Feedback rounds**: the user gives timestamps ("2:09 should have sound", "add GX014904 from 0:10").
    Look up the shot in `shotlist.csv`, change `plan.py` (pins, `S.cam_override`, `take()` to block a moment),
    re-run `13_edl` → `14_render preview` → `18_shotlist`, and check the cut points before answering (see self-check).
@@ -40,8 +40,10 @@ talking/laughing/reactions, a kinetic modern title, no "filmed on" or date lines
 are the heart of the film, light-themed helper pages.
 
 ## Self-check before showing a render
-- `edit_sheet.py preview` → look at `sheets/edit_preview.jpg` (one frame per shot) for black frames, wrong
-  rotation, lens-in-snow and the same scene twice in a row.
+- `23_check preview` → fix what it finds (black/frozen/flash frames, music gaps, loud cuts) in the plan,
+  re-render, check again; at most 3 rounds, then say what is left.
+- `edit_sheet preview` → look at `sheets/edit_preview.jpg` (one frame per shot) for wrong rotation, lens-in-snow,
+  the same scene twice in a row, and on 9:16 a crop that misses the action.
 - `inspect_clip.py` on anything the user mentioned, to make sure the moment is actually in the shot.
 - Check the plan output: total length, "no moment used twice: OK", and that the music lasts to the end.
 - Say plainly what you could not do (e.g. "no telemetry in these files", "that clip is only 720p").
@@ -51,5 +53,7 @@ are the heart of the film, light-themed helper pages.
 - Ask before installing anything big (models over ~200 MB, CUDA wheels, Node packages).
 - Music files are the user's; never commit them or renders to git (the repo's .gitignore covers event folders).
 - Lessons from earlier films are in [references/lessons.md](references/lessons.md). Read it once per event.
-- Planned features (subtitles, 9:16 shorts, Whisper, CLIP search, Resolve export, Remotion titles) are in
-  `ROADMAP.md`. If the user asks for one that isn't built yet, say so and offer to build it.
+- The AI steps (19_transcribe, 19b_sounds, 20_clip, search, 12_music --tracker beat_this) need the optional
+  extras; if a step says they are missing, offer `python install.py --extras` (several GB: ask first).
+- Planned features (Remotion titles, ...) are in `ROADMAP.md` (with known limits of the AI steps). If the user asks for one that isn't built yet,
+  say so and offer to build it.

@@ -1,4 +1,5 @@
-"""Step 15: find untagged 'fun' moments (talking, laughing, shouting) from voice events across all kept videos.
+"""Step 15: find untagged 'fun' moments (talking, laughing, shouting) from voice events across all kept videos
+(plus laughter/cheering/singing from 19b_sounds when it ran: those count 1.5x).
 Merges nearby voice peaks into windows, ranks them, skips windows already covered by visual tags, and writes a
 check sheet (3 frames per window) for the visual pass. Output: fun_windows.json, sheets/fun_*.jpg"""
 import json, subprocess
@@ -7,6 +8,7 @@ from PIL import Image, ImageDraw
 from common import ROOT, SRC, FFMPEG, load_json, save_json
 
 ev = [e for e in load_json("events.json") if e["kind"] == "voice"]
+ev += [dict(e, score=1.5 * e["score"]) for e in load_json("sounds.json", []) if e["kind"] in ("laugh", "cheer", "sing")]
 tags = load_json("tags.json")["tags"]; dd = load_json("dedup.json"); inv = {r["file"]: r for r in load_json("inventory.json")}
 by = defaultdict(list)
 for e in ev: by[e["file"]].append(e)

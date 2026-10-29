@@ -1,15 +1,18 @@
 """Step 12: music analysis - tempo, beat grid, downbeats (bars), loudness per bar, sections, leading/trailing silence.
 Steady-tempo songs: tempo from onset autocorrelation, phase from onset energy on the grid, then each beat is
 snapped to the nearest onset peak (+-60 ms) to follow small drift. Output: music.json (+ sheets/music_*.png).
-Tracks come from event.yaml  music.tracks: {role: path}  (roles are names the plan uses, e.g. calm / upbeat)."""
+Tracks come from event.yaml  music.tracks: {role: path}  (roles are names the plan uses, e.g. calm / upbeat).
+  12_music --tracker beat_this   (or event.yaml music.tracker: beat_this): beats + downbeats from the beat_this neural
+  tracker (AI extras) instead - for songs with tempo changes, swing or a weak kick, where the steady grid drifts."""
 import subprocess, sys
 import numpy as np
 from scipy.signal import find_peaks
 from scipy.ndimage import uniform_filter1d
-from common import ROOT, FFMPEG, save_json, cfg, event_path
+from common import ROOT, FFMPEG, save_json, cfg, event_path, need, device
 
 SR, HOP = 22050, 256
 TRACKS = cfg("music.tracks") or {}
+TRACKER = sys.argv[sys.argv.index("--tracker") + 1] if "--tracker" in sys.argv[:-1] else cfg("music.tracker", "grid")
 
 
 def load(path):
@@ -18,7 +21,21 @@ def load(path):
     return np.frombuffer(raw, np.float32)
 
 
-def analyze(x):
+def neural_beats(x):
+    """beats and downbeats (seconds) from beat_this"""
+    need("beat_this", "The beat_this tracker")
+    from beat_this.inference import Audio2Beats
+    try:
+        a2b = Audio2Beats(checkpoint_path="final0", device="cuda" if device() == "cuda" else "cpu", dbn=False)
+    except Exception as e:                              # first run downloads the model; the server can be down
+        print(f"beat_this unavailable ({str(e)[:120]}); using the steady-grid tracker. The model goes to "
+              "~/.cache/torch/hub/checkpoints/beat_this-final0.ckpt")
+        return None
+    beats, downbeats = a2b(x, SR)
+    return np.asarray(beats, float), np.asarray(downbeats, float)
+
+
+def analyze(x, neural=None):
     n = (len(x) - 2048) // HOP
     fr = np.lib.stride_tricks.as_strided(x, (n, 2048), (x.strides[0] * HOP, x.strides[0])) * np.hanning(2048)
     S = np.log1p(100 * np.abs(np.fft.rfft(fr, axis=1)))
@@ -29,6 +46,17 @@ def analyze(x):
     # silence at start/end
     loud = db > db.max() - 45
     t0, t1 = np.argmax(loud) / fps, (n - np.argmax(loud[::-1])) / fps
+    if neural is not None:                              # beat_this: take its beats and bars as they are
+        beats, bars = neural
+        period = float(np.median(np.diff(beats))); bpm = 60 / period
+        off = int(np.argmin(np.abs(beats - bars[0]))) % 4 if len(bars) else 0
+    else:
+        bpm, period, beats, off = grid_beats(onset, S, n, fps, t0, t1)
+        bars = beats[off::4]
+    return finish_analysis(x, S, db, fps, t0, t1, bpm, period, beats, off, bars)
+
+
+def grid_beats(onset, S, n, fps, t0, t1):
     # tempo: autocorrelation of onset over 70-180 BPM, prefer 90-150
     ac = np.correlate(onset, onset, "full")[len(onset) - 1:]
     lags = np.arange(int(fps * 60 / 180), int(fps * 60 / 70))
@@ -56,7 +84,10 @@ def analyze(x):
     low = np.maximum(0, np.diff(S[:, :20], axis=0)).sum(1); low = np.concatenate([[0], low])
     lowb = np.interp(beats * fps, np.arange(n), uniform_filter1d(low, 3))
     off = int(np.argmax([lowb[k::4].mean() for k in range(4)]))
-    bars = beats[off::4]
+    return bpm, period, beats, off
+
+
+def finish_analysis(x, S, db, fps, t0, t1, bpm, period, beats, off, bars):
     # loudness per bar + sections (novelty on bar loudness/brightness)
     def bar_feat(a, b):
         i, j = int(a * fps), max(int(a * fps) + 1, int(b * fps))
@@ -103,7 +134,10 @@ def main():
     (ROOT / "sheets").mkdir(exist_ok=True)
     out = {}
     for name, path in TRACKS.items():
-        r = analyze(load(path)); plot(name, r)
+        x = load(path)
+        nb = neural_beats(x) if TRACKER == "beat_this" else None
+        r = analyze(x, nb); plot(name, r)
+        r["tracker"] = "beat_this" if nb is not None else "grid"
         r["file"] = path; out[name] = r
         print(f"{name}: {r['bpm']} BPM, {len(r['beats'])} beats, {len(r['bars'])} bars, audio {r['audio_start']}-{r['audio_end']}s of {r['duration']}s")
         for s in r["sections"]:

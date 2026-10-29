@@ -12,6 +12,8 @@ music and renders the film. You give feedback on previews until it's right.
   in its best copy.
 - **Edits like a person**: cuts on bars and beats, song changes under people talking, camera sound only when someone
   laughs or talks, real slow motion on 60 fps footage, a kinetic title, a shot list explaining every choice.
+- **Shorts too**: 9:16 TikTok/Reels cuts from the same footage, with a crop that follows the action and
+  word-by-word captions; or open any cut in DaVinci Resolve, Premiere or Final Cut to fine-tune it yourself.
 
 ## Install (once)
 You need [Python 3.10+](https://www.python.org/downloads/), git and [Claude Code](https://claude.com/claude-code).
@@ -32,6 +34,11 @@ The installer sets up a Python environment, downloads two small face models (~40
 (offers to install it with winget or [Homebrew](https://brew.sh)) and links the skill into `~/.claude/skills`, so
 `/beatcut` works in every Claude Code session. Run it again after moving the repo or pulling updates.
 
+It also offers the **AI extras** (optional, ~3-5 GB): speech transcripts and subtitles (Whisper), laughter and
+cheering detection, image search and automatic visual tags, a neural beat tracker. They run locally; an NVIDIA GPU
+makes them fast, a Mac or a plain PC works too (slower). Without them everything else works. Add them later with
+`python install.py --extras`.
+
 **Even easier:** open Claude Code in the cloned folder and say *"install this"*.
 
 ## Make a film
@@ -48,6 +55,8 @@ The installer sets up a Python environment, downloads two small face models (~40
 3. Answer a few questions: what it is, length and format, the feel, music, title, must-have clips.
 4. Check the review page, pick the music, watch the previews, give feedback with timestamps ("0:58 is boring",
    "add GX010023 from 0:10, the fall"), then render the final film.
+5. Want shorts as well? Ask for them ("make three 30-second TikToks with the falls"); each one gets its own plan
+   and render next to the film.
 
 Come back another day? Open Claude Code in the same folder and run `/beatcut` again; it continues from
 `project.md`.
@@ -69,6 +78,7 @@ ibiza-2027/
   event.yaml        your answers: paths, music, title, style, sound, people
   tags_source.py    visual tags (Claude writes them from contact sheets) -> tags.json
   plan.py           the film: sections, pinned shots, music cues
+  plan_<name>.py    a short (9:16), as many as you like
   project.md        session log: decisions and feedback rounds
   media/            your footage (never modified)
   work/             everything generated: analysis cache, sheets, review page, render/preview.mp4, render/final.mp4
@@ -91,22 +101,33 @@ python beatcut.py <event-folder> 14_render preview --force
 | `10_people`, `people_sheet`, `11_people_page` | face clustering + a page to name people |
 | `12_music` | tempo, beat grid, bars, sections of each song |
 | `15_fun_search`, `17_singing` | talking/laughing windows; singing and silly sounds in windy audio |
-| `13_edl` | runs the event's `plan.py` → `edl.json` (never uses a moment twice) |
-| `14_render` | `preview` (960×540, ~1.5 min) or `final` (1080p, grain) |
+| `19_transcribe` ✦ | what people say, with word timestamps (Whisper) → transcripts.md |
+| `19b_sounds` ✦ | laughter, cheering, singing, shouting (AudioSet model) |
+| `20_clip` ✦, `search` ✦ | image embeddings; `search "powder spray"`; `--autotag` writes first-draft visual tags |
+| `21_scenes` | shot changes inside clips (filler shots never cross one) |
+| `timeline` | filmstrip + waveform + spoken words for one stretch of a clip, to pick exact in/out points |
+| `13_edl` | runs the event's `plan.py` → `edl.json` (never uses a moment twice); `13_edl plan_short1.py` → a short |
+| `14_render` | `preview` (960×540 / 540×960, ~1.5 min) or `final` (1080p, grain); subtitles; `--edl short1` for a short |
+| `22_export` | the cut as .otio (DaVinci Resolve), .xml (Premiere), .fcpxml (Final Cut) on the original files |
+| `23_check` | self-check of a render: black/frozen/flash frames, music gaps, loud cuts, loudness |
 | `16_title` | kinetic title frames (called by the renderer) |
+| `12_music --tracker beat_this` ✦ | neural beats/bars for songs with tempo changes |
 | `18_shotlist`, `edit_sheet`, `inspect_clip` | shot list CSV, one-frame-per-shot sheet, close look at a clip |
+
+✦ needs the AI extras.
 
 ## Repo layout
 ```
-install.py                  one-time setup (Windows, macOS, Linux)
+install.py                  one-time setup (Windows, macOS, Linux); --extras for the AI steps
 AGENTS.md                   instructions for coding agents (CLAUDE.md imports it)
 beatcut.py                       step runner (sets the event, uses .venv)
 pipeline/                   the steps + common.py (config) + edl_lib.py (plan toolkit)
-templates/                  event.yaml, plan.py (one-song starter), project.md
+requirements-ai.txt         the optional AI extras (PyTorch is picked per machine by install.py)
+templates/                  event.yaml, plan.py (one-song starter), plan_short.py (9:16 short), project.md
 examples/                   ski-trip-plan.py (complete two-song film), tags_source.py
 fonts/                      Oswald (SIL Open Font License), the default title font
 .claude/skills/beatcut/   SKILL.md + references (interview, workflow, plan guide, default taste, lessons)
-ROADMAP.md                  next: Whisper, CLIP search, Resolve export, TikTok shorts + subtitles, Remotion titles
+ROADMAP.md                  what's done and what's next (Remotion titles)
 ```
 
 ## Status

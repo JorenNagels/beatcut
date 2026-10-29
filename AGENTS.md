@@ -5,7 +5,8 @@ Read README.md for the layout; the skill is in `.claude/skills/beatcut/`.
 
 ## If the user asks to install / set up
 Run `python install.py` (`python3` on macOS/Linux). It creates `.venv`, installs requirements, downloads the face
-models, checks ffmpeg (offers winget/Homebrew; ask the user before installing) and links the skill into
+models, checks ffmpeg (offers winget/Homebrew; ask the user before installing), offers the optional AI extras
+(several GB: ask the user; `--extras` / `--no-extras` answer it without a prompt) and links the skill into
 `~/.claude/skills`. Afterwards tell them: put footage in `<event folder>/media`, open Claude Code in the event
 folder, type `/beatcut`.
 
@@ -19,3 +20,7 @@ folder, type `/beatcut`.
 - After changing a step, re-run it on a real event and compare outputs (edl.json, `18_shotlist`, a preview
   render) before and after.
 - Code style: compact, numbered steps with a docstring explaining what the step does and writes.
+- AI packages (torch, faster-whisper, open_clip, panns, beat_this) are optional: import them through
+  `common.need()` inside the step, so the rest of the pipeline runs without them. Helper modules end in `_lib.py`
+  (beatcut.py does not list them as steps).
+- An event can hold several EDLs (film + shorts): read and write them through `common.edl_file()` / `out_name()`.

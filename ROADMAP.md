@@ -1,38 +1,46 @@
 # Roadmap
 
-Stages 1-2 are done: a reusable pipeline, the `/beatcut` skill with the setup interview, per-event config,
-and the first film (a ski trip) reproduced exactly from the new setup (same edit, bit-identical sound, identical frames).
+Stages 1-4 are done.
+- **Stage 1-2**: a reusable pipeline, the `/beatcut` skill with the setup interview, per-event config, and the
+  first film (a ski trip) reproduced exactly from the new setup.
+- **Stage 3: better moment finding + hand-tuning** (AI parts need `python install.py --extras`)
+  | step | what |
+  |---|---|
+  | `19_transcribe` | Whisper (faster-whisper, large-v3 on NVIDIA, small elsewhere): word timestamps + transcripts.md |
+  | `19b_sounds` | laughter / cheering / singing / shouting from an AudioSet model (PANNs Cnn14); counts as voices in the plan |
+  | `20_clip`, `search` | SigLIP embeddings of the 2-second frames; text search; `--autotag` first-draft visual tags |
+  | `21_scenes` | PySceneDetect shot changes inside clips; filler windows never cross one |
+  | `12_music --tracker beat_this` | neural beats/downbeats (falls back to the grid tracker if the model can't load) |
+  | `timeline` | filmstrip + waveform (coloured by sound events) + spoken words for one stretch of a clip |
+  | `22_export` | .otio (Resolve 18.5+), .xml (Premiere / FCP7), .fcpxml (Final Cut) on the original files |
+  | `23_check` | self-check of a render: black / frozen / flash frames, no-cut cuts, music gaps, loud cuts, LUFS |
+- **Stage 4: shorts + subtitles**
+  - Formats 9:16, 1:1, 4:5 next to 16:9 (`film.format` or `finish(fmt=)`); landscape shots get a crop that follows
+    faces, then saliency + camera-compensated motion (shot option `reframe`: follow / center / fit / 0-1).
+  - Several EDLs per event: `plan_<name>.py` -> `edl_<name>.json` -> `render/<name>_preview.mp4` (`--edl <name>`).
+  - `templates/plan_short.py`: hook (best fall with sound) on the song's first loud section, 1-bar / 2-beat cuts,
+    a sound bite, ends on a laugh; skips moments used in the film and other shorts unless `REUSE = True`.
+  - Subtitles from the Whisper words, only where camera sound is on: `speech` (sentences, + .srt) and
+    `styled-captions` (1-3 big words, current word highlighted, pop-in, above the TikTok buttons), via libass.
 
-## Stage 3: better moment finding + hand-tuning
-| what | how | why |
-|---|---|---|
-| **Whisper transcripts** | `faster-whisper` (local; fast on an NVIDIA GPU, fine on CPU / Apple Silicon), word timestamps → `transcripts/<file>.json` + one packed `transcripts.md` | search for what people said, find laughs/quotes/speech boundaries for clean cuts, and the base for subtitles |
-| **Laughter / sound events** | Whisper's non-speech tokens + a small audio-event model (e.g. PANNs/YAMNet) | replaces the hand-tuned voice detector; finds laughter, cheering, singing |
-| **CLIP / SigLIP search** | `open_clip` embeddings of 1 frame/s → `search.py "powder spray"` | auto-tags scenic/action/faces/food, so most of `tags_source.py` gets generated instead of written by hand |
-| **Shot boundaries** | PySceneDetect | cleaner in/out points inside long phone clips |
-| **Beat tracking** | `beat_this` (or madmom) as an option next to 12_music | more reliable on songs with tempo changes |
-| **Timeline view** | filmstrip + waveform + transcript words for a time range in one PNG (idea from browser-use/video-use) | faster, more precise looking at decision points than contact sheets |
-| **Resolve export** | `opentimelineio` → `.otio`/`.fcpxml` from edl.json (same shots, source in/out points, music cues) | open the cut in DaVinci Resolve (free) and nudge clips by hand instead of describing timestamps |
-| **Self-check loop** | after each render: frames ±3 around every cut + audio levels → auto-fix list (up to 3 rounds) | catches black frames, flashes, bad cuts before the user sees them |
-
-## Stage 4: shorts (TikTok / Reels) + subtitles
-- **9:16 rendering**: `film.format: "9:16"` → 1080×1920. Landscape shots are reframed with a subject-following
-  crop (faces/motion from 03_analyze, smoothed), vertical phone clips fill the frame natively, letterbox off.
-- **Shorts plan template** (`templates/plan_short.py`): hook in the first 1-2 s (best fall/jump with sound),
-  1-beat/2-beat cuts, one sound bite, ends on a laugh; 15/30/60 s variants; several shorts from one event
-  without reusing the film's exact moments (or reusing on purpose).
-- **Subtitles** from the Whisper words:
-  - `speech`: clean sentence subtitles (SRT + burned in) for talking parts of the long film;
-  - `styled-captions`: TikTok style, 1-3 words at a time, big bold font, the current word highlighted,
-    pop-in on each word, emoji optional, safe zone above the TikTok UI. Rendered as ASS subtitles through
-    ffmpeg (libass) for the first version.
-- Language: auto-detect (Dutch/English mixed is fine for Whisper large-v3).
+Known limits
+- Auto-tags agree with hand tags ~40% of the time on the ski trip (snowy slopes read as "action"); they are a
+  first draft, not a replacement for the visual pass. Falls/crashes still come from eyes, sound and the user.
+- 19b_sounds hears laughter reliably indoors (charades, dinner) but hardly at all under wind: on the ski trip every
+  laugh after a fall scored below 0.1. Outdoors, the voice-band detector (05_events) and 17_singing still matter.
+- beat_this downloads its model from cloud.cp.jku.at; on 2026-10-29 that server's TLS certificate had expired, so
+  12_music fell back to the grid tracker (it says so and keeps working).
+- The subject-following crop misses fast skiers entering from the edge; check the edit sheet and set `reframe`.
+- Captions have no emoji (libass draws no colour emoji); Remotion (stage 5) would add them.
+- Whisper hallucinates short lines ("Ja.") on wind noise; low-confidence lines are kept in transcripts.md with
+  their confidence so they can be ignored.
 
 ## Stage 5: Remotion for titles and captions (optional)
 **What Remotion is:** a free (for individuals) framework where you build video graphics as React/TypeScript
 components and render them to video frames. The output is the same kind of transparent title overlay as now,
 but with web design tools: any Google font, smooth spring animations, shapes, masks, emoji, gradients.
-- `remotion/` sub-project: `KineticTitle`, `Captions` (word-by-word TikTok captions), `LowerThird`, `EndCard`
+- `remotion/` sub-project: `KineticTitle`, `Captions` (word-by-word captions with emoji and richer motion than
+  the libass version), `LowerThird`, `EndCard`
   compositions that read their text/timing from edl.json, rendered as transparent PNG sequences (or ProRes 4444)
   and overlaid by 14_render exactly like the current Python title frames.
 - The Python title (16_title.py) stays as the fallback, so Node is never required.
