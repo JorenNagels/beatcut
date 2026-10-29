@@ -18,13 +18,13 @@ You need [Python 3.10+](https://www.python.org/downloads/), git and [Claude Code
 
 **Windows**
 ```powershell
-git clone https://github.com/<owner>/highlight-film
+git clone https://github.com/JorenNagels/highlight-film
 cd highlight-film
 python install.py
 ```
 **macOS**
 ```bash
-git clone https://github.com/<owner>/highlight-film
+git clone https://github.com/JorenNagels/highlight-film
 cd highlight-film
 python3 install.py
 ```
