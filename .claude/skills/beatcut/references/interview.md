@@ -6,7 +6,9 @@ Goal: fill `event.yaml` (see `templates/event.yaml`) with as few questions as po
 If the user hasn't said: ask for the folder. Recommended layout is an event folder with `media/` inside
 (subfolders per camera/person are fine; files are identified by their path inside `media/`, so two GoPros with
 the same file names don't clash). Footage can also stay where it is (`source:` absolute path in event.yaml).
-If the event folder doesn't exist yet, create it with `event.yaml`, `project.md`, `music/`. Never move the footage.
+If the event folder doesn't exist yet, create it with `event.yaml`, `project.md`, `music/`: in the repo's `events/`
+when Claude runs in the repo, otherwise in the current folder. Large footage that is already somewhere else stays
+there (`source:` absolute path) instead of being copied into `events/`. Never move the footage.
 
 ## Look before asking
 - List the footage folder (count, cameras from file names: `GX…`/`GH…` GoPro, `IMG_…` iPhone, `VIDEO-…` WhatsApp,

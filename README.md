@@ -66,6 +66,20 @@ five styles (slam, minimal, handwritten, glitch, VHS), captions with emoji, an a
 Come back another day? Open Claude Code in the same folder and run `/beatcut` again; it continues from
 `project.md`.
 
+### Where to keep your films
+Two ways, both fully supported; pick per film.
+
+| | **Next to the repo** (default) | **Inside the repo** |
+|---|---|---|
+| where | any folder, e.g. `D:\trips\ibiza-2027` | `beatcut/events/ibiza-2027/` (git-ignored) |
+| start | open Claude Code in the event folder, `/beatcut` | open Claude Code in `beatcut`, `/beatcut events/ibiza-2027` |
+| Claude sees | the skill + the docs it needs | also the pipeline code and `AGENTS.md`: handy if you also change beatcut while editing |
+
+Either way nothing of your film is ever committed: `events/` is in `.gitignore`.
+Inside the repo, two cautions: `git clean -xfd` or deleting the clone **deletes your films too** (they are
+ignored files), so don't run it there; and keep big footage outside and point to it with
+`source: D:/footage/ibiza` in `event.yaml`, so the event folder only holds the plan, notes and renders.
+
 ### Footage tips
 - **Use originals where you can**: GoPro straight from the SD card (keep the `.LRV`/`.THM` files), phone videos by
   cable/AirDrop/iCloud "Download originals". Shared-album and WhatsApp copies are compressed (often 720p) and

@@ -12,7 +12,9 @@ folder, type `/beatcut`.
 
 ## Working on the pipeline
 - Steps are `pipeline/NN_name.py`, run via `python beatcut.py <event-folder> <step>`; they need `BEATCUT_EVENT` (beatcut.py sets it).
-- Per-event data never goes in the repo: event.yaml, plan.py, tags, people and project.md live in the event folder.
+- Per-event data never goes in the repo: event.yaml, plan.py, tags, people and project.md live in the event folder,
+  either outside the repo or in `events/<name>/` (git-ignored). Never run `git clean -x` here: it deletes those.
+  Test changes on a real event, e.g. `python beatcut.py events/<name> 13_edl`.
 - Source footage is read-only. Generated files go to the event's `work` folder.
 - Files are identified by their path inside the source folder (`cam2/GX010001.MP4`); use `common.base()` for
   camera-name patterns.

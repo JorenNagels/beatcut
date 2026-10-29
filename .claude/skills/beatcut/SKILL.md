@@ -8,15 +8,22 @@ description: Make a highlight film (or short vertical clips) from a folder of tr
 The `beatcut` repo holds a generic Python + ffmpeg pipeline. Its path is in `repo-path.txt` next to this
 file (written by `install.py`); if that file is missing, ask the user where they cloned the repo and to run
 `python install.py` there (`python3` on macOS). Each film is
-an **event folder** elsewhere on disk holding `event.yaml` (the interview answers), the hand-made decisions
-(`tags.json`, `plan.py`, `people_names.json`) and `project.md` (session memory). Footage is read-only; generated
-files go to the event's work folder. Run every step as:
+an **event folder** holding `event.yaml` (the interview answers), the hand-made decisions (`tags.json`, `plan.py`,
+`people_names.json`) and `project.md` (session memory). Footage is read-only; generated files go to the event's
+work folder. Event folders live in one of two places:
+- **inside the repo** under `<repo>/events/<name>/` (git-ignored). Used when Claude runs in the repo itself: then
+  `/beatcut events/ibiza-2027` (or `/beatcut` and ask which one: list `events/` and offer a new one).
+- **anywhere else**, e.g. `D:\trips\ibiza-2027`, with Claude opened in that folder and `/beatcut` typed there.
+
+Run every step as:
 
 ```
 python <repo>/beatcut.py <event-folder> <step> [args]      # python3 on macOS; e.g. python beatcut.py D:\trips\ibiza-2027 02_dedup
 ```
 
 ## How to work
+0. **Which event?** The current folder if it has `event.yaml`; else the path the user gave (`/beatcut events/x`);
+   in the repo with no path: list `events/*/event.yaml` and ask which one, or start a new one in `events/`.
 1. **Continuing?** If the event folder already has `project.md`, read it and `event.yaml` first, summarise where
    things stand in two lines, and carry on from there. Don't redo the interview.
 2. **Interview** (new event): follow [references/interview.md](references/interview.md). Ask with AskUserQuestion
