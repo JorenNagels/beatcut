@@ -35,14 +35,24 @@ Known limits
 - Whisper hallucinates short lines ("Ja.") on wind noise; low-confidence lines are kept in transcripts.md with
   their confidence so they can be ignored.
 
+- **Stage 6: graphics designed per film** (2026-10-30)
+  - `<event>/graphics/*.tsx`: the film's own Remotion components, bundled with the built-ins (`remotion/webpack.mjs`,
+    helpers from `'beatcut'` = `remotion/src/lib.ts`); a component named like a built-in replaces it, or
+    `style.title_style: <Component>`.
+  - Placed from the plan: shot option `gfx={...}` or `graphic(use, t, dur, ...)`; every graphic gets the music's
+    beats and bars (edl.json now stores them on the timeline) so it can animate on the beat.
+  - New built-ins: `Pop` (TikTok-style words popping in on the beat), `Callout` (ring + label).
+  - `gfx` step: contact sheet of graphics over their shots; 14_render re-renders only shots whose command changed.
+  - `style.graphics: auto` (default): Remotion when installed; an event that needs Remotion and lacks it stops
+    with a message instead of silently getting the built-in title.
+  - The skill designs the look per film (references/graphics.md) instead of choosing from five presets.
 - **Stage 5: Remotion graphics** (optional: `python install.py --remotion`, needs Node.js 18+)
   - `remotion/`: `Title` in five styles (slam, minimal, handwritten, glitch, vhs), `Captions` (word-by-word with
     emoji and spring motion), `EndCard`, `LowerThird`; one `Overlay` composition places them all on the timeline.
   - `pipeline/graphics_lib.py` turns the EDL into that overlay (cached by content), and 14_render lays the right
     stretch of it over each shot it touches. Per shot, because ffmpeg restarts its filters on the joined film when
     the shots' colour tags change, which loses a long overlay's place.
-  - Opt-in per event: `style.graphics: remotion`; the Python title (16_title.py) stays the default and the fallback,
-    so Node is never required and existing films render unchanged.
+  - The Python title (16_title.py) stays the fallback when Remotion is not installed, so Node is never required.
 
 ## Ideas parked
 - Music suggestions: analyse the footage mood + length, propose songs with BPM/energy that fit (user picks).

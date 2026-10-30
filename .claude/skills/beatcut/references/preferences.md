@@ -7,10 +7,15 @@ own memory/preferences say otherwise, follow those.
 ## Picture
 - **No still photos with Ken Burns zoom.** On 720p-era footage they looked "scuffed". Photos are for the review page.
 - **No name cards** over people unless asked.
-- Title: **kinetic and modern**: slam-in, flash, RGB split, wipe, glitch-out, on the beat. Never plain text
-  over a video.
+- Title: **kinetic, on the beat**. Never plain text over a video. How it moves is designed per film
+  (references/graphics.md): don't copy the previous film's title.
+- Text on funny moments (a word, an emoji, a running gag like a fall counter) is welcome; few and well-timed.
 - Credits: film title + music only. No "filmed on GoPro and iPhones", no month/year line.
-- Snow: muted, slightly cool grade; letterbox on scenic breathers only.
+
+## What the ski film used (not a rule for other films)
+- Muted, slightly cool grade; 2.39:1 letterbox on scenic breathers; Bahnschrift.
+- Title: the letters dropping in one per beat with snow puffs, the year as a stamp, a gust blowing it away; a
+  FALL COUNTER on every crash; icy blue accent.
 
 ## Sound
 - **The music never stops.** It ducks under voices (−6 dB) and sound bites (−14 dB) but never cuts to silence,

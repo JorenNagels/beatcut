@@ -30,9 +30,10 @@ there (`source:` absolute path) instead of being copied into `events/`. Never mo
   originals (SD card, phone) still exist. Continue with what's there if not.
 - **Must-haves / must-nots**: clips they already know they want, as `file + timestamp + why`, and things
   that must stay out (people who don't want to be in it, private moments).
-- **Title & credits**: film name; title style: slam (kinetic, default), minimal, handwritten, glitch, vhs, or none;
-  credits lines (default: title + music). Styles other than slam need the Remotion graphics (`style.graphics:
-  remotion`; if `remotion/node_modules` is missing, offer `python install.py --remotion`, ~450 MB, ask first).
+- **Title & credits**: film name (big word, sub line, tag) and credits lines (default: title + music). Don't ask
+  for a title style: the graphics are designed for this film later (references/graphics.md). Do ask for inside
+  jokes, nicknames or a running gag that could go on screen. If `remotion/node_modules` is missing, offer
+  `python install.py --remotion` (~450 MB, Node.js 18+, ask first): without it every film gets the same title.
 - **People**: recognise faces so everyone gets screen time? (default yes). Names on screen? (default no).
 - **Sound**: camera audio only on talking/laughing (default), more ambient sound, or music only.
 - **Subtitles** (shorts or speech-heavy films): none / speech (sentence subtitles) / styled-captions (TikTok-style

@@ -6,12 +6,14 @@ import {Captions, CaptionsProps} from './Captions';
 import {EndCard, EndCardProps, LowerThird, LowerThirdProps} from './Cards';
 import {Size} from './common';
 import {Overlay, OverlayProps} from './Overlay';
+import {Callout, CalloutProps, Pop, PopProps} from './Text';
 import {Title, TitleProps} from './Title';
 
 const meta: CalculateMetadataFunction<Size> = ({props}) => ({
 	width: props.width, height: props.height, fps: props.fps, durationInFrames: Math.max(1, props.frames),
 });
 const size: Size = {width: 1920, height: 1080, fps: 30, frames: 100};
+const music = {beats: [0.2, 0.62, 1.04, 1.45, 1.87, 2.29, 2.7], bars: [0.2, 1.87], accent: '#FFE600'};
 
 export const Root: React.FC = () => (
 	<>
@@ -34,6 +36,12 @@ export const Root: React.FC = () => (
 			width={1920} height={1080} fps={30} durationInFrames={150} />
 		<Composition id="LowerThird" component={LowerThird} calculateMetadata={meta as CalculateMetadataFunction<LowerThirdProps>}
 			defaultProps={{...size, frames: 90, text: 'Sam', sub: 'the one who fell', accent: '#FFE600'} as LowerThirdProps}
+			width={1920} height={1080} fps={30} durationInFrames={90} />
+		<Composition id="Pop" component={Pop} calculateMetadata={meta as CalculateMetadataFunction<PopProps>}
+			defaultProps={{...size, ...music, frames: 90, text: 'send it 🚀'} as PopProps}
+			width={1920} height={1080} fps={30} durationInFrames={90} />
+		<Composition id="Callout" component={Callout} calculateMetadata={meta as CalculateMetadataFunction<CalloutProps>}
+			defaultProps={{...size, ...music, frames: 90, x: 0.4, y: 0.45, text: 'Vincent 👀'} as CalloutProps}
 			width={1920} height={1080} fps={30} durationInFrames={90} />
 	</>
 );

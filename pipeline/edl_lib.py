@@ -218,6 +218,13 @@ def best_talk(L, exclude=()):
 
 # ---------------- timeline ----------------
 segs = []
+graphics = []                                      # graphic(): graphics placed on the timeline
+
+
+def graphic(use, t, dur, **props):
+    """a graphic (graphics_lib: built-in Pop / Callout / LowerThird or one in the event's graphics/) from timeline
+    second t for dur seconds; props go to the component. On a single shot use the shot option gfx= instead."""
+    graphics.append({"use": use, "t": round(t, 3), "dur": round(dur, 3), **props})
 
 
 def place(t0, t1, s, section):
@@ -302,6 +309,12 @@ def finish(duration, music_cues, title_t0, title_t1, title_bpm, fmt=None, subtit
             if s["type"] == "video" and s["src"] == f and a <= s["in"] <= b:
                 s["cam_audio"] = lvl; s["cam_note"] = "manual"
 
+    beats, bars = set(), set()                   # the music's beats and bars on the timeline (graphics animate on them)
+    cues = sorted(music_cues, key=lambda c: c["at"])      # where songs overlap, the newer one counts
+    for c, end in zip(cues, [c["at"] for c in cues[1:]] + [duration]):
+        for key, out in (("beats", beats), ("bars", bars)):
+            out.update(round(c["at"] + b - c["from"], 3) for b in M[c["track"]][key]
+                       if c["from"] <= b < c["to"] and 0 <= c["at"] + b - c["from"] < end)
     title = cfg("title", {}) or {}
     edl = {"fps": FPS, "duration": round(duration, 3),
            "format": fmt or cfg("film.format", "16:9"), "subtitles": subtitles or cfg("subtitles", "none") or "none", "fades": list(fades),
@@ -309,7 +322,7 @@ def finish(duration, music_cues, title_t0, title_t1, title_bpm, fmt=None, subtit
                           "big": title.get("big", ""), "sub": title.get("sub", ""), "tag": str(title.get("tag", ""))},
            "music": {"tracks": {k: M[k]["file"] for k in M}, "cues": music_cues},
            "title": title.get("full", ""), "credits": cfg("credits", []) or [],
-           "names": sorted(NAMES), "segments": segs}
+           "names": sorted(NAMES), "beats": sorted(beats), "bars": sorted(bars), "graphics": graphics, "segments": segs}
     save_json(common.edl_file(), edl)
 
     print(f"duration {duration:.1f}s ({int(duration // 60)}:{duration % 60:04.1f}), {len(segs)} shots")

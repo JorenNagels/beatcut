@@ -34,6 +34,10 @@ python <repo>/beatcut.py <event-folder> <step> [args]      # python3 on macOS; e
 4. **Write the plan**: copy `templates/plan.py` for a simple one-song film, or adapt `examples/ski-trip-plan.py`
    for a structured film (cold open, talk transitions, chapters, funny breakdown, outro). Shorts: one
    `plan_<name>.py` per short from `templates/plan_short.py`. Read [references/plan-guide.md](references/plan-guide.md) first.
+4b. **Design the graphics** for this film once the first cut stands: follow [references/graphics.md](references/graphics.md).
+   Every film gets its own title and moment text (TikTok-style words, callouts, running gags) written as Remotion
+   components in `<event>/graphics/`, placed from the plan, checked with `gfx` contact sheets. Never reuse the
+   previous film's look unless the user asks for it.
 5. **Feedback rounds**: the user gives timestamps ("2:09 should have sound", "add GX014904 from 0:10").
    Look up the shot in `shotlist.csv`, change `plan.py` (pins, `S.cam_override`, `take()` to block a moment),
    re-run `13_edl` → `14_render preview` → `18_shotlist`, and check the cut points before answering (see self-check).
@@ -43,8 +47,9 @@ python <repo>/beatcut.py <event-folder> <step> [args]      # python3 on macOS; e
 ## Defaults the user has already chosen (don't ask again; override only if they say so)
 Read [references/preferences.md](references/preferences.md). Short version: no Ken Burns photo zooms, no name
 cards, the music never stops (it ducks under voices and songs change under a talking clip), camera sound only on
-talking/laughing/reactions, a kinetic modern title, no "filmed on" or date lines in the credits, funny moments
-are the heart of the film, light-themed helper pages.
+talking/laughing/reactions, a title that moves on the beat (never plain text over a video), no "filmed on" or
+date lines in the credits, funny moments are the heart of the film, light-themed helper pages. The look itself
+(title, fonts, colours, text on moments) is designed per film, see step 4b.
 
 ## Self-check before showing a render
 - `23_check preview` → fix what it finds (black/frozen/flash frames, music gaps, loud cuts) in the plan,
@@ -62,7 +67,9 @@ are the heart of the film, light-themed helper pages.
 - Lessons from earlier films are in [references/lessons.md](references/lessons.md). Read it once per event.
 - The AI steps (19_transcribe, 19b_sounds, 20_clip, search, 12_music --tracker beat_this) need the optional
   extras; if a step says they are missing, offer `python install.py --extras` (several GB: ask first).
-- Title styles other than slam, emoji captions and lower thirds need the Remotion graphics (`style.graphics:
-  remotion`, `python install.py --remotion`, Node.js 18+; ask first). Without them the built-in title is used.
-- Planned features (Remotion titles, ...) are in `ROADMAP.md` (with known limits of the AI steps). If the user asks for one that isn't built yet,
+- The film's own graphics, title styles other than slam, text on shots, emoji captions and lower thirds need the
+  Remotion graphics (`python install.py --remotion`, Node.js 18+; ask first). Check `remotion/node_modules`
+  exists at the start of a new event and offer the install then; without it every film gets the same built-in title.
+  `14_render` stops with a message when an event uses graphics that need Remotion and it is missing.
+- Planned features are in `ROADMAP.md` (with known limits of the AI steps). If the user asks for one that isn't built yet,
   say so and offer to build it.

@@ -39,8 +39,10 @@ cheering detection, image search and automatic visual tags, a neural beat tracke
 makes them fast, a Mac or a plain PC works too (slower). Without them everything else works. Add them later with
 `python install.py --extras`.
 
-And it offers the **Remotion graphics** (optional, ~450 MB, needs [Node.js](https://nodejs.org) 18+): the title in
-five styles (slam, minimal, handwritten, glitch, VHS), captions with emoji, an animated end card and lower thirds.
+And it offers the **Remotion graphics** (optional, ~450 MB, needs [Node.js](https://nodejs.org) 18+, recommended):
+Claude designs the graphics for each film (its own animated title, TikTok-style words on the funny moments,
+callouts, running gags like a fall counter) as small React components in the event folder, plus captions with
+emoji, an animated end card and lower thirds. Without it every film gets the same built-in title.
 [Remotion](https://www.remotion.dev) is free for individuals and small teams; companies need a
 [license](https://www.remotion.dev/license). Add it later with `python install.py --remotion`.
 
@@ -55,6 +57,7 @@ five styles (slam, minimal, handwritten, glitch, VHS), captions with emoji, an a
        phone-alex/   IMG_1234.MOV …
        whatsapp/     VIDEO-2027-07-03-14-22-10.mp4 …
      music/          the songs (optional: Claude can suggest some)
+     graphics/       made by Claude: this film's title and text animations (React, Remotion)
    ```
 2. Open Claude Code in `ibiza-2027` and type **`/beatcut`**.
 3. Answer a few questions: what it is, length and format, the feel, music, title, must-have clips.
@@ -129,7 +132,8 @@ python beatcut.py <event-folder> 14_render preview --force
 | `14_render` | `preview` (960×540 / 540×960, ~1.5 min) or `final` (1080p, grain); subtitles; `--edl short1` for a short |
 | `22_export` | the cut as .otio (DaVinci Resolve), .xml (Premiere), .fcpxml (Final Cut) on the original files |
 | `23_check` | self-check of a render: black/frozen/flash frames, music gaps, loud cuts, loudness |
-| `16_title` | kinetic title frames (called by the renderer); with `style.graphics: remotion` the title, captions, end card and lower thirds come from `remotion/` instead |
+| `16_title` | kinetic title frames (called by the renderer when Remotion is not installed) |
+| `gfx` | contact sheet of the Remotion graphics over their shots (`gfx list`, `gfx 3`), to check them in seconds |
 | `12_music --tracker beat_this` ✦ | neural beats/bars for songs with tempo changes |
 | `18_shotlist`, `edit_sheet`, `inspect_clip` | shot list CSV, one-frame-per-shot sheet, close look at a clip |
 
@@ -142,7 +146,8 @@ AGENTS.md                   instructions for coding agents (CLAUDE.md imports it
 beatcut.py                       step runner (sets the event, uses .venv)
 pipeline/                   the steps + common.py (config) + edl_lib.py (plan toolkit)
 requirements-ai.txt         the optional AI extras (PyTorch is picked per machine by install.py)
-remotion/                   optional Remotion graphics: titles, captions, end card, lower third (npm run studio)
+remotion/                   optional Remotion graphics: built-ins (titles, captions, Pop, Callout, end card, lower
+                            third) + the bundling of each event's own graphics/ (npm run studio)
 templates/                  event.yaml, plan.py (one-song starter), plan_short.py (9:16 short), project.md
 examples/                   ski-trip-plan.py (complete two-song film), tags_source.py
 fonts/                      Oswald (SIL Open Font License), the default title font

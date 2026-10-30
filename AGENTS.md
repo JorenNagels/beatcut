@@ -27,4 +27,6 @@ folder, type `/beatcut`.
   (beatcut.py does not list them as steps).
 - An event can hold several EDLs (film + shorts): read and write them through `common.edl_file()` / `out_name()`.
 - `remotion/` is an optional Node sub-project (graphics); pin all `@remotion/*` packages to the same exact version.
-  Check a graphics change by rendering an event with `style.graphics: remotion` and looking at frames.
+  Each event can have its own components in `<event>/graphics/*.tsx` (bundled via `remotion/webpack.mjs`; they
+  import helpers from `'beatcut'` = `remotion/src/lib.ts`, so keep that API stable). Check a graphics change with
+  `python beatcut.py events/<name> gfx <n>` (contact sheet) and a preview render.

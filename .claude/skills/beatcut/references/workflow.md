@@ -101,11 +101,13 @@ a crop that follows faces and motion; set `reframe="fit"` (whole frame on a blur
 falls is the most common problem.
 
 ## Graphics (Remotion)
-With `style.graphics: remotion` in event.yaml, 14_render draws the title (`style.title_style`), the styled captions
-(with emoji), the end card and lower thirds with Remotion instead of the built-in title/drawtext/libass. The graphics
-are rendered once per change into render/gfx/ (a 5-min film: ~2 min at preview size) and laid over the shots, so
-always pass `--force` after switching engines or changing the plan. Tweak the look: `cd remotion && npm run studio`.
-Lower thirds: `lower_third="Vincent"` or `{"text": "Vincent", "sub": "backwards fall"}` on a shot in the plan.
+Design them per film: [graphics.md](graphics.md). With Remotion installed (`style.graphics: auto`, the default),
+14_render draws the title, the film's own graphics (`<event>/graphics/`), text placed in the plan (`gfx=`,
+`graphic()`), styled captions (with emoji), the end card and lower thirds as one overlay track. It is rendered
+once per change into render/gfx/ (a 5-min film: ~2 min at preview size); only shots whose command changed are
+re-rendered, so `--force` is not needed after a plan or graphics change. Check graphics without rendering:
+`beatcut gfx list`, `beatcut gfx <n>` (contact sheet). Lower thirds: `lower_third="Vincent"` or
+`{"text": "Vincent", "sub": "backwards fall"}` on a shot in the plan.
 
 ## Subtitles
 `subtitles:` in event.yaml (or `finish(..., subtitles=)`): `speech` (sentence subtitles, bottom) or

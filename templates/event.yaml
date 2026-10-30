@@ -36,9 +36,9 @@ style:
   grain: true
   letterbox_scenic: true
   # font: path/to/font.ttf       # default: bundled Oswald
-  graphics: remotion               # remotion (title styles, emoji captions, end card; install.py --remotion) | python
-  title_style: slam                # slam | minimal | handwritten | glitch | vhs   (all but slam need remotion)
-  accent: "#FFE600"                # highlighted caption word, lower-third bar
+  graphics: auto                   # auto (remotion when installed) | remotion | python (built-in title only)
+  title_style: slam                # slam | minimal | handwritten | glitch | vhs | a component in graphics/ (e.g. MyTitle)
+  accent: "#FFE600"                # highlighted words, rings, lower-third bar (every graphic gets it)
   photos: false                    # Ken Burns stills (user default: off)
   name_cards: false
 

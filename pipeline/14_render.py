@@ -7,15 +7,16 @@ slow motion (>= 50 fps sources; speed ramps = shot split into parts), muted cool
 shots. Shots are joined losslessly; the final pass overlays the kinetic title (16_title.py frames) and credits,
 fades in/out, burns in subtitles (edl "subtitles": speech | styled-captions, from 19_transcribe; see subs_lib.py)
 and (final) adds grain.
-Graphics: style.graphics python (default: 16_title frames, drawtext credits, libass captions) or remotion (graphics_lib:
-one transparent track with title / captions / end card / lower thirds, laid over the shots it touches).
+Graphics: style.graphics auto (remotion when installed) | remotion (graphics_lib: one transparent track with title,
+captions, end card, lower thirds, text on shots and the film's own graphics, laid over the shots it touches) |
+python (16_title frames, drawtext credits, libass captions). Shots are cached and re-rendered only when they change.
 Audio (numpy): the music is a list of cues from edl.json (song part -> timeline position, fades), so the plan decides
 where songs change (best under a talking clip, so the music never stops); music dips 6 dB under clips with voices
 (soft 0.25 s ramps), 14 dB under sound bites; clip sound loudness-matched; peak limiter.
 Look from event.yaml: style.grade (preset name or raw ffmpeg filter), style.grain, style.font (default: bundled Oswald).
 Format from the EDL (film.format / finish(fmt=)): 16:9 -> 960x540 preview, 1920x1080 final; 9:16 -> 540x960, 1080x1920.
 Output: render/preview.mp4 / render/final.mp4 (+ .srt when there is speech); --edl short1 -> render/short1_preview.mp4."""
-import json, shutil, subprocess, sys, threading
+import hashlib, json, shutil, subprocess, sys, threading
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 from PIL import Image, ImageFilter, ImageOps
@@ -54,7 +55,7 @@ GRADES = {
 }
 GRADE = GRADES.get(cfg("style.grade", "cool-muted"), cfg("style.grade", "cool-muted"))   # preset or raw filter
 GRAIN = cfg("style.grain", True)
-GFX = graphics_lib.engine()                  # python: 16_title + drawtext credits + libass; remotion: overlays
+GFX = graphics_lib.engine(E)                  # python: 16_title + drawtext credits + libass; remotion: overlays
 SHARP = ",unsharp=5:5:0.5" if MODE == "final" else ""
 LB = round(H * 0.1278) if W > H else 0                 # 2.39:1 letterbox only on landscape films
 LETTERBOX = f",drawbox=x=0:y=0:w=iw:h={LB}:color=black:t=fill,drawbox=x=0:y=ih-{LB}:w=iw:h={LB}:color=black:t=fill"
@@ -206,20 +207,27 @@ def video_cmd(s, src, a, n, sp, out, f0):
            ["-filter_complex", vf] + encode_args(n) + [str(out)]
 
 
+def fresh(out, cmd):
+    """True when out was rendered by exactly this command: a shot is re-rendered when anything about it changes
+    (plan, look, graphics), otherwise reused"""
+    sig = out.with_suffix(".sig")
+    return not FORCE and out.exists() and sig.exists() and sig.read_text() == hashlib.md5(" ".join(cmd).encode()).hexdigest()
+
+
 def render_seg(i_s):
     """returns list of rendered files for this shot (several for speed ramps)"""
     i, s = i_s
     n = s["frames"]; f0 = round(s["t0"] * FPS)
     if s["type"] == "photo":
         out = SEG / f"{i:03d}.mp4"
-        if out.exists() and not FORCE: return [out]
-        base = TMP / f"{NAME}_{i:03d}.jpg"; photo_base(s, base); D = n / FPS
+        base = TMP / f"{NAME}_{i:03d}.jpg"; D = n / FPS
         lb = LETTERBOX if s.get("letterbox") else ""
         vf = (f"scale=w='trunc({W}*(1.0+0.07*t/{D:.3f})/2)*2':h=-2:eval=frame:flags=bicubic,"
               f"crop={W}:{H},setsar=1,{GRADE}{lb},format=yuv420p")
         extra, g = with_graphics(vf, f0, n)
         cmd = [FFMPEG, "-v", "error", "-y", "-loop", "1", "-framerate", str(FPS), "-t", f"{D + 0.5:.3f}", "-i", str(base)] +             extra + (["-filter_complex", g] if extra else ["-vf", vf]) + encode_args(n) + [str(out)]
-        jobs = [(cmd, out)]
+        jobs = [(cmd + [json.dumps(s, sort_keys=True)], out)]
+        if not fresh(out, jobs[0][0]): photo_base(s, base)
     else:
         parts = s.get("parts") or [{"src": s["src"], "in": s["in"], "dur": s["dur"], "slowmo": s.get("slowmo", 1.0)}]
         frames = [round(p["dur"] * FPS) for p in parts]; frames[-1] = n - sum(frames[:-1])
@@ -228,9 +236,10 @@ def render_seg(i_s):
             out = SEG / (f"{i:03d}.mp4" if len(parts) == 1 else f"{i:03d}_{k}.mp4")
             jobs.append((video_cmd(s, p["src"], p["in"], nf, p.get("slowmo", 1.0), out, f0 + sum(frames[:k])), out))
     for cmd, out in jobs:
-        if out.exists() and not FORCE: continue
-        r = subprocess.run(cmd, capture_output=True, text=True)
+        if fresh(out, cmd): continue
+        r = subprocess.run(cmd[:-1] if s["type"] == "photo" else cmd, capture_output=True, text=True)
         if r.returncode: raise RuntimeError(f"seg {i} {s['src']}: {r.stderr[-800:]}")
+        out.with_suffix(".sig").write_text(hashlib.md5(" ".join(cmd).encode()).hexdigest())
     return [o for _, o in jobs]
 
 
